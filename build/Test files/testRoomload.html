@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timetable</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Additional CSS styling */
+        .border-solid {
+            border-style: solid;
+            border-width: 1px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4">
+
+<div class="overflow-x-auto">
+    <table class="table-auto">
+        <thead>
+        <tr>
+            <th class="px-4 py-2 border-solid">Time</th>
+            <th class="px-4 py-2 border-solid">Monday</th>
+            <th class="px-4 py-2 border-solid">Tuesday</th>
+            <th class="px-4 py-2 border-solid">Wednesday</th>
+            <th class="px-4 py-2 border-solid">Thursday</th>
+            <th class="px-4 py-2 border-solid">Friday</th>
+            <th class="px-4 py-2 border-solid">Saturday</th>
+        </tr>
+        </thead>
+        <tbody id="timetable-body">
+        <!-- Time slots will be dynamically generated here -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const scheduleData = {
+        monday: [
+            { start: '07:00', end: '10:00', activity: 'Morning Meeting' },
+            { start: '13:30', end: '15:00', activity: 'Team Project' }
+            // Add more schedule items as needed
+        ],
+        tuesday: [
+            // Schedule for Tuesday
+        ],
+        // Repeat for other days of the week
+    };
+
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const timetableBody = document.getElementById('timetable-body');
+
+    // Function to generate time slots
+    function generateTimeSlots() {
+        const timeSlots = [];
+        for (let hour = 7; hour <= 20; hour++) {
+            for (let minute = 0; minute < 60; minute += 30) {
+                const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                timeSlots.push(time);
+            }
+        }
+        return timeSlots;
+    }
+
+    // Function to generate timetable rows
+    function generateTimetableRows() {
+        const timeSlots = generateTimeSlots();
+        timeSlots.forEach(time => {
+            const row = document.createElement('tr');
+            const timeCell = document.createElement('td');
+            timeCell.textContent = time;
+            timeCell.classList.add('px-4', 'py-2', 'border-solid');
+            row.appendChild(timeCell);
+            days.forEach(day => {
+                const scheduleItem = scheduleData[day].find(item => item.start === time);
+                const activityCell = document.createElement('td');
+                activityCell.classList.add('px-4', 'py-2', 'border-solid');
+                if (scheduleItem) {
+                    activityCell.textContent = scheduleItem.activity;
+                    const timeDifference = timeDiff(scheduleItem.start, scheduleItem.end);
+                    activityCell.rowSpan = timeDifference / 30;
+                }
+                row.appendChild(activityCell);
+            });
+            timetableBody.appendChild(row);
+        });
+    }
+
+    // Function to calculate time difference in minutes
+    function timeDiff(start, end) {
+        const startTime = new Date(`01/01/2022 ${start}`);
+        const endTime = new Date(`01/01/2022 ${end}`);
+        return (endTime - startTime) / (1000 * 60); // Difference in minutes
+    }
+
+    // Generate the timetable
+    generateTimetableRows();
+</script>
+
+</body>
+</html>

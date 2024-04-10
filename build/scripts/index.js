@@ -1,20 +1,37 @@
-const loginBtn = document.getElementById('loginBtn');
 
-  // Add click event listener to the login button
-  loginBtn.addEventListener('click', () => {
-    // Redirect to the dashboard page
-    window.location.href = 'dashboard.html'; // Replace 'dashboard.html' with the actual URL of your dashboard page
-  });
 
-  function showCustomDialog() {
-    document.getElementById('custom-dialog').classList.remove('hidden');
-  }
-
-  function confirmLogout() {
-      // Redirect to index page after logout confirmation
-      window.location.href = "index.html";
-  }
-
-  function cancelLogout() {
-      document.getElementById('custom-dialog').classList.add('hidden');
+function showForgetPass() {
+    document.getElementById('forgetPass').classList.remove('hidden');
 }
+
+function hideForgetPass() {
+    document.getElementById('forgetPass').classList.add('hidden');
+}
+
+function doneForgetPass() {
+    document.getElementById('forgetPass').classList.add('hidden');
+}
+
+document.getElementById('forgetPassForm').addEventListener('submit', function (event) {
+    event.preventDefault(); // Prevent default form submission
+
+    // Fetch data from the form
+    const formData = new FormData(this);
+    const email = formData.get('email');
+
+    // Here you should handle the logic to send the reset password link to the user's email.
+    // For this example, we'll just show a confirmation message.
+    const confirmationMessage = document.getElementById('forgetPassMessage');
+    confirmationMessage.textContent = `A reset password link has been sent to ${email}. Please check your email.`;
+    const forgetPassImage = document.getElementById('forgetPassImage');
+    forgetPassImage.src = 'img/success.svg';
+    document.getElementById('buttons').classList.add('hidden');
+    document.getElementById('DoneButton').classList.remove('hidden');
+    document.getElementById('forgetPassForm').classList.add('hidden');
+
+    // Reset the form
+    this.reset();
+
+    // Optionally, you can hide the forget password dialog after submission
+    // hideForgetPass();
+});
