@@ -14,11 +14,18 @@ $building = htmlspecialchars($_POST['building']);
 $type = htmlspecialchars($_POST['type']);
 $roomStatus = htmlspecialchars($_POST['roomStatus']);
 
+// Determine the college based on the building
+$college = '';
+if ($building == 'CABA') {
+    $college = 'Accountancy and Business Administration';
+} elseif ($building == 'CEIT') {
+    $college = 'Engineering and Information Technology';
+} elseif ($building == 'COED') {
+    $college = 'Education';
+}
+
 // Connect to the database
-$servername = "localhost";
-$username = "root";
-$db_password = ""; // Change this if you have set a password for your database
-$dbname = "reservadb";
+require_once "config.php";
 
 // Create connection
 $conn = new mysqli($servername, $username, $db_password, $dbname);
@@ -28,9 +35,26 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Check if the room already exists in the database
+$checkStmt = $conn->prepare("SELECT COUNT(*) FROM rooms WHERE room_number = ? AND building = ?");
+$checkStmt->bind_param("ss", $roomNumber, $building);
+$checkStmt->execute();
+$checkStmt->bind_result($count);
+$checkStmt->fetch();
+$checkStmt->close();
+
+if ($count > 0) {
+    // Redirect back to the referring page with error parameter
+    $referer = $_SERVER['HTTP_REFERER'];
+    header("Location: $referer?success=false&duplicate=true");
+    // Close database connection
+    $conn->close();
+    exit();
+}
+
 // Prepare SQL statement to insert a new facility into the database
-$stmt = $conn->prepare("INSERT INTO rooms (room_number, building, room_type, room_status) VALUES (?, ?, ?, ?)");
-$stmt->bind_param("ssss", $roomNumber, $building, $type, $roomStatus);
+$stmt = $conn->prepare("INSERT INTO rooms (room_number, building, room_type, room_status, college) VALUES (?, ?, ?, ?, ?)");
+$stmt->bind_param("sssss", $roomNumber, $building, $type, $roomStatus, $college);
 
 // Execute SQL statement to insert a new facility
 if ($stmt->execute()) {
@@ -40,17 +64,25 @@ if ($stmt->execute()) {
     // Close database connection
     $conn->close();
 
-    // Redirect back to roomMngmnt.php with success parameter
-    header("Location: roomMngmnt.php?success=true");
+    // Return success message as JSON response
+    echo json_encode(array('success' => true, 'message' => 'Room added successfully.'));
+
+    // Redirect back to the referring page with success parameter
+    $referer = $_SERVER['HTTP_REFERER'];
+    header("Location: $referer?success=true");
     exit();
 } else {
     // Return error message as JSON response
-    echo json_encode(array('success' => false, 'message' => 'Error adding facility: ' . $stmt->error));
-
+    echo json_encode(array('success' => false, 'message' => 'Error adding room.'));
     // Close prepared statement
     $stmt->close();
 
     // Close database connection
     $conn->close();
+
+    // Redirect back to the referring page with error parameter
+    $referer = $_SERVER['HTTP_REFERER'];
+    header("Location: $referer?success=false&error=true");
+    exit();
 }
 ?>

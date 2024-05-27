@@ -33,6 +33,11 @@ if ($conn->connect_error) {
 // Fetch the user ID from the session data
 $user_id = $_SESSION['user_id'];
 
+// Fetch the user data from the database
+$user_query = "SELECT * FROM users WHERE id = '$user_id'";
+$user_result = $conn->query($user_query);
+$user_data = $user_result->fetch_assoc();
+
 // Fetch user's department from the database
 $head_department = '';
 $head_department_sql = "SELECT department FROM users WHERE id = $user_id";
@@ -42,9 +47,29 @@ if ($head_department_result->num_rows > 0) {
     $head_department = $row['department'];
 }
 
-// Fetch reservations from the same department with status "In Review"
-$reservation_sql = "SELECT * FROM reservations WHERE user_department = '$head_department' AND reservation_status = 'In Review'";
+// Fetch reservations with status "In Review" from the same department
+$review_reservation_sql = "SELECT * FROM reservations WHERE user_department = '$head_department' ORDER BY created_at DESC";
+$review_reservation_result = $conn->query($review_reservation_sql);
+
+
+$reservations = [];
+$reservation_sql = "SELECT * FROM reservations WHERE reservation_status = 'Reserved'";
 $reservation_result = $conn->query($reservation_sql);
+
+if ($reservation_result->num_rows > 0) {
+    while ($row = $reservation_result->fetch_assoc()) {
+        $reservation = [
+            'title' => $row['facility_name'],
+            'start' => $row['reservation_date'] . 'T' . $row['start_time'],
+            'end' => $row['reservation_date'] . 'T' . $row['end_time'],
+            'backgroundColor' => '#f00', // Color for reserved events
+            'userDepartment' => $row['user_department'],
+            // Add more details as needed
+        ];
+        $reservations[] = $reservation;
+    }
+}
+
 ?>
 
 
@@ -56,133 +81,149 @@ $reservation_result = $conn->query($reservation_sql);
     <title>PLV: RESERVA</title>
     <link rel="stylesheet" href="css/style.css">
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar/index.global.min.js'></script>
-    <script>
-
-      document.addEventListener('DOMContentLoaded', function() {
-        const calendarEl = document.getElementById('calendar')
-        const calendar = new FullCalendar.Calendar(calendarEl, {
-          initialView: 'dayGridMonth'
-        })
-        calendar.render()
-      })
-
-    </script>
 </head>
 <body>
     <div class="flex h-screen bg-gray-100">
-        <!-- Sidebar -->
-        <!-- Component Start -->
-        <div class="flex flex-col items-center w-16 h-full overflow-hidden text-blue-200 bg-plv-blue rounded-r-lg">
-            <a class="flex items-center justify-center mt-3" href="#">
-                <img class="w-8 h-8" src="img/PLV Logo.png" alt="Logo">
-            </a>
-            <div class="flex flex-col items-center mt-3 border-t border-gray-700">
-                <a class="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-persian-blue" href="deptHeadDashboard.php">
-                    <svg class="w-6 h-6 stroke-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                </a>
-                <a class="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-persian-blue" href="#">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
-                      </svg>
-                                          
-                </a>
-                <a class="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-persian-blue" href="deptHeadSched.html">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-                    </svg>                      
-                </a>
-            </div>
-            <div class="flex flex-col items-center mt-2 border-t border-gray-700">
-                <a class="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-persian-blue" href="#">
-                    <svg class="w-6 h-6 stroke-current"  xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                    </svg>
-                </a>
-                <a class="relative flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-persian-blue" href="#">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0M3.124 7.5A8.969 8.969 0 0 1 5.292 3m13.416 0a8.969 8.969 0 0 1 2.168 4.5" />
-                      </svg>
-                      
-                    <span class="absolute top-0 left-0 w-2 h-2 mt-2 ml-2 bg-plv-highlight rounded-full"></span>
-                </a>
-            </div>
-                <!-- Trigger the custom confirmation dialog -->
-                <a class="flex items-center justify-center w-16 h-16 mt-auto bg-persian-blue hover:bg-plv-highlight" href="#" onclick="showCustomDialog()">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
-                    </svg>
-                </a>
+
+        <div id="sidebar-container">
+            <?php include 'sidebar.php'; ?>
         </div>
-        <!-- Component End  -->
-        <!-- Content area -->
+        
         <div class="flex flex-col flex-1">
-            <!-- Header -->
             <header class="bg-white shadow-lg">
-                <!-- Header content -->
                 <div class="flex items-center justify-between px-6 py-3 border-b">
                     <h2 class="text-lg font-semibold">Chairperson's Dashboard</h2>
                     <!-- Add any header content here -->
                 </div>
             </header>
+            <!-- For debugging purposes to get session data-->
+            <div class="flex flex-col space-y-2 hidden">
+                <label for="department" class="text-gray-700">Department:</label>
+                <input type="text" id="department" name="department" class="border border-gray-300 rounded-md p-2" value="<?php echo htmlspecialchars($head_department); ?>" readonly>
+            </div>
+            <!-- For debugging purposes to get session data-->
             <!-- Main content area -->
-            <main class="flex-1 p-4">
-                <div class="flex h-[560px] flex-row items-center space-x-4">
-                    <div class="flex h-full w-8/12 flex-col space-y-2">
-                            
-                        <!-- For debugging purposes to get session data-->
-                        <div class="flex flex-col space-y-2 hidden">
-                            <label for="department" class="text-gray-700">Department:</label>
-                            <input type="text" id="department" name="department" class="border border-gray-300 rounded-md p-2" value="<?php echo htmlspecialchars($head_department); ?>" readonly>
+            <main class="flex flex-1 p-4 h-screen overflow-y-auto">
+                <div class="w-3/4 pr-4">
+                    <div class="mb-4">
+                        <!-- Banner -->
+                        <div class="relative bg-blue-300 text-white p-6 m-2 rounded-md lg:h-32 xl:h-40 md:h-24 sm:h-20 flex justify-between max-h-40 overflow-hidden">
+                            <div class="w-full md:w-3/4">
+                                <h2 class="text-lg lg:text-xl xl:text-2xl font-semibold pb-1">Welcome, <?php echo $user_data['first_name'] . ' ' . $user_data['last_name']; ?></h2>
+                                <p class="text-sm lg:text-base">Welcome to your dashboard! From here, you can efficiently manage room loadings, view schedules, and input essential data for classes and other academic-related management. If you require assistance, please don't hesitate to reach out to our support team.</p>
+                            </div>
+                            <div class="hidden md:block w-1/4">
+                                <img class="h-auto w-full" src="img/undraw_hello_re_3evm.svg" alt="Greeting SVG">
+                            </div>
                         </div>
-                        <!-- For debugging purposes to get session data-->
                     </div>
-
-                    <div class="h-full border-l border-gray-300"></div>
-
-                    <div class="flex flex-col h-full w-1/3 space-y-4">
-                        <div class="h-1/2">
-                            <div id='calendar' class="h-full p-1 text-xs bg-white border border-gray-200 rounded-lg shadow-lg"></div>
+                    
+                    <!--Widgets-->
+                    <div class="grid grid-cols-2 m-2 gap-4">
+                        <div class="flex items-center rounded bg-white p-6 shadow-md h-40">
+                            <i class="fas fa-calendar-alt fa-3x w-1/4 text-blue-600"></i>
+                            <div class="ml-4 w-3/4">
+                                <h2 class="text-lg font-bold">Upcoming Reservations</h2>
+                                <?php
+                                // Fetch count of upcoming reservations for the current user's department
+                                $reservation_count_sql = "SELECT COUNT(*) AS count FROM reservations WHERE user_department = '$head_department' AND reservation_date >= CURDATE()";
+                                $reservation_count_result = $conn->query($reservation_count_sql);
+                                
+                                if ($reservation_count_result) {
+                                    $row = $reservation_count_result->fetch_assoc();
+                                    $reservation_count = $row['count'];
+                                    echo '<p class="text-2xl">' . $reservation_count . '</p>';
+                                } else {
+                                    echo '<p class="text-2xl">0</p>';
+                                }
+                                ?>
+                            </div>
                         </div>
+                        <div class="flex items-center rounded bg-white p-6 shadow-md h-40">
+                            <i class="fas fa-exclamation-triangle fa-3x w-1/4 text-red-600"></i>
+                            <div class="ml-4 w-3/4">
+                                <h2 class="text-lg font-bold">Declined Reservation</h2>
+                                <?php
+                                // Fetch count of unapproved room loadings for the current user's department
+                                $unapproved_count_sql = "SELECT COUNT(*) AS count FROM reservations WHERE user_department = '$head_department' AND reservation_status = 'In Review'";
+                                $unapproved_count_result = $conn->query($unapproved_count_sql);
+                                
+                                if ($unapproved_count_result) {
+                                    $row = $unapproved_count_result->fetch_assoc();
+                                    $unapproved_count = $row['count'];
+                                    echo '<p class="text-2xl">' . $unapproved_count . '</p>';
+                                } else {
+                                    echo '<p class="text-2xl">0</p>';
+                                }
+                                ?>
+                            </div>
+                        </div>
+                        <div class="flex items-center rounded bg-white p-6 shadow-md h-40">
+                            <i class="fas fa-calendar-check fa-3x w-1/4 text-green-600"></i>
+                            <div class="ml-4 w-3/4">
+                                <h2 class="text-lg font-bold">Total Classes Scheduled</h2>
+
+                            </div>
+                        </div>
+                        <div class="flex items-center rounded bg-white p-6 shadow-md h-40">
+                            <i class="fas fa-calendar-times fa-3x w-1/4 text-yellow-600"></i>
+                            <div class="ml-4 w-3/4">
+                                <h2 class="text-lg font-bold">Total Classes Not Scheduled</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="h-full border-l border-gray-300"></div>
+
+                <div class="flex flex-col h-full w-1/3 space-y-4">
+                    <div class="h-1/2">
+                        <div id='calendar' class="h-full p-1 text-xs bg-white border border-gray-200 rounded-lg shadow-lg"></div>
+                    </div>
                     <!-- Events/Reserved Dates -->
-                    <div class="flex flex-col h-full space-y-4 overflow-hidden">
+                    <div class="flex flex-col space-y-4 overflow-y-auto">
                         <div>
                             <h2 class="font-semibold">Events/Reserved Dates</h2>
                         </div>
-                        <div id="eventsList" class="bg-white shadow overflow-hidden sm:rounded-lg flex-1">
-                        <ul id="eventsListUl" class="divide-y divide-gray-200 flex flex-col">
-    <?php
-    // Display reservations
-    if ($reservation_result->num_rows > 0) {
-        while ($row = $reservation_result->fetch_assoc()) {
-            // Add unique IDs to each list item
-            $reservationId = $row["id"];
-            echo '<li class="p-4 border-gray-200 border-b reservation-item" data-reservation-id="' . $reservationId . '">';
-            echo '<h3 class="text-lg font-bold mb-2">' . htmlspecialchars($row["facility_name"]) . '</h3>';
-            echo '<p class="text-gray-600 mb-2">Reservation Date: ' . htmlspecialchars($row["reservation_date"]) . '</p>';
-            echo '<p class="text-gray-600 mb-2">Start Time: ' . htmlspecialchars($row["start_time"]) . ' - End Time: ' . htmlspecialchars($row["end_time"]) . '</p>';
-            echo '<p class="italic">' . htmlspecialchars($row["reservation_status"]) . '</p>';
-            // Add accept and decline buttons
-            echo '<div class="flex justify-between mt-2">';
-            echo '<button onclick="declineReservation(' . $reservationId . ')" class="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600">Decline</button>';
-            echo '<button onclick="acceptReservation(' . $reservationId . ')" class="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-green-600">Accept</button>';
-            echo '</div>';
-            echo '</li>';
-        }
-    } else {
-        echo '<li>No reservations found</li>';
-    }
-    ?>
-</ul>
-
+                        <div id="eventsList" class="bg-white shadow overflow-y-auto sm:rounded-lg flex-1">
+                            <ul id="eventsListUl" class="divide-y divide-gray-200 flex flex-col">
+                                <?php
+                                // Display reservations
+                                if ($review_reservation_result->num_rows > 0) {
+                                    // Reset pointer to the beginning of the result set
+                                    mysqli_data_seek($review_reservation_result, 0);
+                                    
+                                    while ($row = $review_reservation_result->fetch_assoc()) {
+                                        // Add unique IDs to each list item
+                                        $reservationId = $row["id"];
+                                        echo '<li class="p-4 border-gray-200 border-b reservation-item" data-reservation-id="' . $reservationId . '">';
+                                        echo '<h3 class="text-lg font-bold mb-2">' . htmlspecialchars($row["facility_name"]) . '</h3>';
+                                        echo '<p class="text-gray-600 mb-2">Reservation Date: ' . htmlspecialchars($row["reservation_date"]) . '</p>';
+                                        echo '<p class="text-gray-600 mb-2">Start Time: ' . htmlspecialchars($row["start_time"]) . ' - End Time: ' . htmlspecialchars($row["end_time"]) . '</p>';
+                                        echo '<p class="italic">' . htmlspecialchars($row["reservation_status"]) . '</p>';
+                                        
+                                        // Conditionally show accept and decline buttons only for "In Review" or "Declined" reservations
+                                        if ($row["reservation_status"] === "In Review") {
+                                            echo '<div class="flex justify-between mt-2">';
+                                            echo '<button onclick="declineReservation(' . $reservationId . ')" class="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600">Decline</button>';
+                                            echo '<button onclick="acceptReservation(' . $reservationId . ')" class="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-green-600">Accept</button>';
+                                            echo '</div>';
+                                        }
+                                        
+                                        echo '</li>';
+                                    }
+                                } else {
+                                    echo '<li>No reservations found</li>';
+                                }
+                                ?>
+                            </ul>
                         </div>
-                    </div>
                     </div>
                 </div>
             </main>
         </div>
     </div>
+
     <!-- HTML for custom confirmation dialog -->
     <div id="custom-dialog" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
         <div class="bg-white p-6 rounded-lg shadow-lg w-11/12 max-w-md flex flex-col items-center">
@@ -205,69 +246,215 @@ $reservation_result = $conn->query($reservation_sql);
         </div>
     </div>
 </div>
+
+<!-- Reservation Modal -->
+<div id="reservationsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-11/12 max-w-md">
+        <div class="font-bold text-xl mb-4">Reservation Details</div>
+        <div id="modalContent" class="text-gray-800">
+            <p><strong>Facility Name:</strong> <span id="facilityName"></span></p>
+            <p><strong>Reservation Date:</strong> <span id="reservationDate"></span></p>
+            <p><strong>Start Time:</strong> <span id="startTime"></span></p>
+            <p><strong>End Time:</strong> <span id="endTime"></span></p>
+            <!-- Add more details as needed -->
+        </div>
+        <div class="flex justify-center mt-5">
+            <button onclick="closeModal()" class="mr-4 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-400">Close</button>
+        </div>
+    </div>
+</div>
+<!-- Modal for rejection reason-->
+<div id="rejectionReasonForm" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-8 rounded-md shadow-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-semibold">Enter reason for rejection:</h2>
+            </div>
+            <div>
+                <form id="reservationForm" class="space-y-4">
+                    <div class="flex flex-col space-y-2">
+                        <textarea id="rejectionReason" name="rejectionReason" rows="3" class="border border-gray-300 rounded-md p-2" required></textarea>
+                    </div>
+                </form>
+                <button onclick="hideRejectModal()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Cancel</button>
+                <button id="confirmRejectionButton" class="px-4 py-2 mt-2 bg-red-500 text-white rounded-lg hover:bg-red-600">OK</button>
+            </div>
+    </div>
+</div>
+<!-- HTML for custom confirmation dialog -->
+<div id="confirmationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-11/12 max-w-md flex flex-col items-center">
+        <p id="confirmationMessage" class="text-lg text-slate-700 font-semibold mb-4"></p>
+        <div class="flex justify-center mt-5">
+            <button onclick="cancelAction()" class="mr-4 px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400">Cancel</button>
+            <button onclick="confirmAction()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Confirm</button>
+        </div>
+    </div>
+</div>
+
     <script src="scripts/logout.js"></script>
     <script src="scripts/functions.js"></script>
     <script>
-    // Function to show the modal
-// Function to show modal with message
-function showModal(message) {
-    const modalContent = document.getElementById('modalContent');
-    modalContent.innerHTML = `<p>${message}</p>`;
-    document.getElementById('reservationModal').classList.remove('hidden');
+document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('calendar');
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        events: <?php echo json_encode($reservations); ?>,
+        eventContent: function(info) {
+            console.log(info.event);
+            return info.event.title;
+        }
+    });
+
+    // Event listener for clicking on FullCalendar events
+    calendar.on('eventClick', function(info) {
+        console.log('Clicked event:', info.event);
+    // Call the showModal function and pass the event details
+    showModal(info.event);
+    });
+
+    calendar.render();
+});
+
+
+// Function to show modal with reservation details
+function showModal(event) {
+    console.log('Showing modal for event:', event);
+    const modal = document.getElementById('reservationsModal');
+    const modalContent = modal.querySelector('#modalContent');
+
+    // Convert start and end dates to local time
+    const startDate = new Date(event.start);
+    const endDate = new Date(event.end);
+
+    // Format options for date and time
+    const dateOptions = {
+        weekday: 'short', 
+        year: 'numeric', 
+        month: 'numeric', 
+        day: 'numeric',
+    };
+
+    const timeOptions = {
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
+    };
+
+    modalContent.innerHTML = `
+        <p><strong>Facility Name:</strong> ${event.title}</p>
+        <p><strong>Reservation Date:</strong> ${startDate.toLocaleDateString(undefined, dateOptions)}</p>
+        <p><strong>Start Time:</strong> ${startDate.toLocaleTimeString(undefined, timeOptions)}</p>
+        <p><strong>End Time:</strong> ${endDate.toLocaleTimeString(undefined, timeOptions)}</p>
+        <!-- Add more details as needed -->
+    `;
+
+    modal.classList.remove('hidden');
 }
 
-    // Function to close the modal
-    function closeModal() {
-        document.getElementById('reservationModal').classList.add('hidden');
-    }
+
+// Function to close the modal
+function closeModal() {
+    const modal = document.getElementById('reservationsModal');
+    modal.classList.add('hidden');
+}
+
+
+// Function to hide success modal
+function hideRejectModal() {
+    const rejectionReasonForm = document.getElementById('rejectionReasonForm');
+    rejectionReasonForm.classList.add('hidden');
+}
 
 //Dept. Head Reservations Functions
+// Function to show confirmation modal
+function showConfirmation(message, callback) {
+    const confirmationModal = document.getElementById('confirmationModal');
+    const confirmationMessage = document.getElementById('confirmationMessage');
+    confirmationMessage.innerText = message;
+    confirmationModal.classList.remove('hidden');
+    // Set callback function for confirmation action
+    confirmActionCallback = callback;
+}
+
+// Function to hide confirmation modal
+function hideConfirmation() {
+    const confirmationModal = document.getElementById('confirmationModal');
+    confirmationModal.classList.add('hidden');
+}
+
+// Function to handle confirmation action
+function confirmAction() {
+    hideConfirmation();
+    if (confirmActionCallback) {
+        confirmActionCallback();
+    }
+}
+
+// Function to handle cancellation of action
+function cancelAction() {
+    hideConfirmation();
+}
+
+let confirmActionCallback;
+
 // Function to handle accepting reservation
 function acceptReservation(reservationId) {
-    fetch('update_reservation_status.php?id=' + reservationId + '&status=Pending', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-    .then(response => {
-        if (response.ok) {
-            // Reservation accepted successfully, show success modal
-            showModal('Reservation accepted');
-        } else {
-            // Handle error
-            showModal('Error accepting reservation');
-        }
+    showConfirmation('Are you sure you want to accept this reservation?', function() {
+        fetch('update_reservation_status.php?id=' + reservationId + '&status=Pending', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                // Reload the page after successful acceptance
+                location.reload();
+            } else {
+                // Handle error
+                showModal({ title: 'Error accepting reservation' });
+            }
+        });
     });
 }
-
-// Function to handle declining reservation
 function declineReservation(reservationId) {
-    fetch('update_reservation_status.php?id=' + reservationId + '&status=Declined', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-    .then(response => {
-        if (response.ok) {
-            // Reservation declined successfully, show success modal
-            showModal('Reservation declined');
-        } else {
-            // Handle error
-            showModal('Error declining reservation');
-        }
-    });
-}
+    console.log("Decline button clicked");
+    // Show rejection reason form
+    const rejectionReasonForm = document.getElementById('rejectionReasonForm');
+    rejectionReasonForm.classList.remove('hidden');
 
-// Function to show modal with message
-function showModal(message) {
-    const modalContent = document.getElementById('modalContent');
-    modalContent.innerHTML = `<p>${message}</p>`;
-    document.getElementById('reservationModal').classList.remove('hidden');
-}
+    // Handle confirmation after inputting rejection reason
+    const confirmButton = document.getElementById('confirmRejectionButton');
+    confirmButton.onclick = function() {
+        // Get rejection reason from the form
+        const rejectionReason = document.getElementById('rejectionReason').value;
 
+        // Show confirmation message before declining
+        showConfirmation('Are you sure you want to decline this reservation?', function() {
+            // Send rejection reason and decline reservation
+            fetch('update_reservation_status.php?id=' + reservationId + '&status=Declined', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    reason: rejectionReason
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Reload the page after successful decline
+                    location.reload();
+                } else {
+                    // Handle error
+                    showModal({ title: 'Error declining reservation' });
+                }
+            });
+        });
+    };
+}
 
 </script>
+
 </body>
 </html>

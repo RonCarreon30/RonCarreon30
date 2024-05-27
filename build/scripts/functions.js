@@ -20,3 +20,6 @@ function closeRoomForm() {
     document.getElementById('room-form').classList.add('hidden');
 }
 
+function closeSchedForm() {
+    document.getElementById('amyModal').classList.add('hidden');
+  }

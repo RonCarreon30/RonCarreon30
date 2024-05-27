@@ -1,13 +1,24 @@
 <?php
+header('Content-Type: application/json');
+
 // Check if reservation ID and status are provided
 if (!isset($_GET['id']) || !isset($_GET['status'])) {
     http_response_code(400);
-    exit('Missing parameters');
+    echo json_encode(['error' => 'Missing parameters']);
+    exit();
 }
 
 // Get reservation ID and status from the request
-$reservationId = $_GET['id'];
+$reservationId = intval($_GET['id']);
 $status = $_GET['status'];
+
+// Fetch the rejection reason from the request
+$rejectionReason = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $json = file_get_contents('php://input');
+    $data = json_decode($json, true);
+    $rejectionReason = isset($data['reason']) ? $data['reason'] : '';
+}
 
 // Connect to the database
 $servername = "localhost";
@@ -18,19 +29,20 @@ $dbname = "reservadb";
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
     http_response_code(500);
-    exit('Connection failed: ' . $conn->connect_error);
+    echo json_encode(['error' => 'Connection failed: ' . $conn->connect_error]);
+    exit();
 }
 
-// Update reservation status in the database
-$stmt = $conn->prepare("UPDATE reservations SET reservation_status = ? WHERE id = ?");
-$stmt->bind_param("si", $status, $reservationId);
+// Update reservation status and rejection reason in the database
+$stmt = $conn->prepare("UPDATE reservations SET reservation_status = ?, rejection_reason = ? WHERE id = ?");
+$stmt->bind_param("ssi", $status, $rejectionReason, $reservationId);
 
 if ($stmt->execute()) {
     http_response_code(200);
-    echo "Reservation status updated successfully";
+    echo json_encode(['success' => 'Reservation status updated successfully']);
 } else {
     http_response_code(500);
-    echo "Error updating reservation status: " . $conn->error;
+    echo json_encode(['error' => 'Error updating reservation status: ' . $conn->error]);
 }
 
 $stmt->close();

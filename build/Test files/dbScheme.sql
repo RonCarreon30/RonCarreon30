@@ -9,6 +9,30 @@ CREATE TABLE users (
     userRole VARCHAR(50),
     userPassword VARCHAR(255) NOT NULL
 );
+CREATE TABLE classes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    academic_year_id INT NOT NULL,
+    semester_id INT NOT NULL,
+    course_id INT NOT NULL,
+    year_section_id INT NOT NULL,
+    subject_id INT NOT NULL,
+    room_id INT NOT NULL,
+    faculty varchar(100) NOT NULL,
+    start_time time NOT NULL,
+    end_time time NOT NULL,
+    class_day varchar(20) NOT NULL,
+    room_type varchar(50) NOT NULL,
+    building varchar(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (academic_year_id) REFERENCES academic_years(id),
+    FOREIGN KEY (semester_id) REFERENCES semesters(id),
+    FOREIGN KEY (course_id) REFERENCES courses(id),
+    FOREIGN KEY (year_section_id) REFERENCES year_section(id),
+    FOREIGN KEY (subject_id) REFERENCES subjects(id),
+    FOREIGN KEY (room_id) REFERENCES rooms(id)
+);
+
+
 
 -- Create facilities table
 CREATE TABLE facilities (

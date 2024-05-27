@@ -38,13 +38,13 @@
             // Debugging: Output department information            
             switch ($user['userRole']) {
                 case 'Admin':
-                    $redirect = 'adminDashboard.html';
+                    $redirect = 'adminDashboard.php';
                     break;
                 case 'Registrar':
-                    $redirect = 'regDashboard.php';
+                    $redirect = 'dashboard-reg.php';
                     break;
                 case 'Facility Head':
-                    $redirect = 'gsoDashboard.php';
+                    $redirect = 'dashboard-gso.php';
                     break;
                 case 'Dept. Head':
                     $redirect = 'deptHeadDashboard.php';

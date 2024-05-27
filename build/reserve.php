@@ -18,9 +18,9 @@ if ($_SESSION['role'] !== 'Student Rep') {
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Validate form data
-    if (empty($_POST['reservationDate']) || empty($_POST['startTime']) || empty($_POST['endTime']) || empty($_POST['facilityName']) || empty($_POST['department'])) {
+    if (empty($_POST['reservationDate']) || empty($_POST['startTime']) || empty($_POST['endTime']) || empty($_POST['facilityName']) || empty($_POST['department']) || empty($_POST['purpose'])) {
         // Return error response if any required field is empty
-        echo json_encode(array("success" => false, "error" => "Reservation date, start time, end time, facility name, and department are required."));
+        echo json_encode(array("success" => false, "error" => "Reservation date, start time, end time, facility name, department, and purpose are required."));
         exit();
     }
 
@@ -32,13 +32,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $additional_info = $_POST['additionalInfo'];
     $facility_name = $_POST['facilityName']; // Get facility name from the form
     $department = $_POST['department']; // Get department from the form
+    $purpose = $_POST['purpose']; // Get purpose from the form
     $reservation_status = 'In Review'; // Set reservation status to 'In Review'
-    
+
     // Get facility ID based on facility name
     $facility_id = getFacilityId($facility_name);
 
     if ($facility_id !== false) {
-        // Check for overlapping reservations
+        // Insert reservation into the database
         $servername = "localhost";
         $username = "root";
         $db_password = ""; // Change this if you have set a password for your database
@@ -52,36 +53,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             die("Connection failed: " . $conn->connect_error);
         }
 
-        // Check for overlapping reservations
-        $sql = "SELECT id FROM reservations WHERE facility_id = ? AND reservation_date = ? AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("isssss", $facility_id, $reservation_date, $start_time, $start_time, $end_time, $end_time);
-        $stmt->execute();
-        $stmt->store_result();
-        if ($stmt->num_rows > 0) {
-            // Overlapping reservation found
-            echo json_encode(array("success" => false, "error" => "Overlapping reservation exists"));
-            exit();
-        }
-        $stmt->close();
-
-        // Check for duplicate reservations
-        $sql = "SELECT id FROM reservations WHERE facility_id = ? AND reservation_date = ? AND start_time = ? AND end_time = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("isss", $facility_id, $reservation_date, $start_time, $end_time);
-        $stmt->execute();
-        $stmt->store_result();
-        if ($stmt->num_rows > 0) {
-            // Duplicate reservation found
-            echo json_encode(array("success" => false, "error" => "Duplicate reservation exists"));
-            exit();
-        }
-        $stmt->close();
-
         // Prepare SQL statement
-        $sql = "INSERT INTO reservations (user_id, user_department, facility_id, facility_name, reservation_date, start_time, end_time, additional_info, reservation_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO reservations (user_id, user_department, facility_id, facility_name, reservation_date, start_time, end_time, additional_info, reservation_status, purpose) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("isissssss", $user_id, $department, $facility_id, $facility_name, $reservation_date, $start_time, $end_time, $additional_info, $reservation_status);
+        $stmt->bind_param("isisssssss", $user_id, $department, $facility_id, $facility_name, $reservation_date, $start_time, $end_time, $additional_info, $reservation_status, $purpose);
 
         // Execute SQL statement
         if ($stmt->execute()) {
