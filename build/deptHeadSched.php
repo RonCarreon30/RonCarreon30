@@ -19,7 +19,35 @@ if ($_SESSION['role'] !== 'Dept. Head') {
 // Include the database configuration file
 include 'config.php';
 
-// Perform a JOIN query to fetch the data from the classes table and related tables
+    // Create a connection to the database
+$mysqli = new mysqli($servername, $username, $db_password, $dbname);
+
+// Check the connection
+if ($mysqli->connect_error) {
+    die("Connection failed: " . $mysqli->connect_error);
+}
+
+// Fetch the user ID from the session data
+$user_id = $_SESSION['user_id'];
+
+    // Fetch user's department from the database
+    $user_department = '';
+    $user_department_sql = "SELECT department FROM users WHERE id = $user_id";
+    $user_department_result = $conn->query($user_department_sql);
+    if ($user_department_result->num_rows > 0) {
+        $row = $user_department_result->fetch_assoc();
+        $user_department = $row['department'];
+    }
+
+    // Fetch courses
+    // Modify the query to include the department filter and isScheduled check
+    $query = "SELECT id, class_name FROM classes WHERE class_college = ? AND isScheduled = 0";
+    $stmt = $mysqli->prepare($query);
+    $stmt->bind_param('s', $user_department); // Bind the department parameter
+    $stmt->execute();
+    $classes = $stmt->get_result();
+
+    // Perform a JOIN query to fetch the data from the classes table and related tables
 $sql = "SELECT 
             c.id AS class_id,
             ay.academic_year,
@@ -43,12 +71,23 @@ $sql = "SELECT
         INNER JOIN year_section ys ON c.year_section_id = ys.id
         INNER JOIN subjects sj ON c.subject_id = sj.id
         INNER JOIN faculty f ON c.faculty_id = f.id
-        INNER JOIN rooms r ON c.room_id = r.room_id";
+        INNER JOIN rooms r ON c.room_id = r.room_id
+        WHERE c.class_college = ? AND c.isScheduled = 1";
 
-$result = $conn->query($sql);
+$stmt = $conn->prepare($sql);
+if (!$stmt) {
+    die("Preparation failed: " . $conn->error);
+}
 
-// Fetch the user ID from the session data
-$user_id = $_SESSION['user_id'];
+// Bind the parameter
+$stmt->bind_param('s', $user_department);
+
+// Execute the statement
+$stmt->execute();
+
+// Get the result
+$result = $stmt->get_result();
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -84,12 +123,21 @@ $user_id = $_SESSION['user_id'];
                                 // Include the database configuration file
                                 include 'config.php';
 
-                                // Fetch courses
-                                $classes = $conn->query("SELECT id, class_name FROM classes");
                                 $buildings = $conn->query("SELECT DISTINCT building FROM rooms");
                                 ?>
                             <form id="classScheduleForm" action="save_room_load.php" method="POST" class="w-full max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-lg">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- Course dropdown -->
+                                    <div class="mb-4">
+                                        <label for="class" class="block text-gray-700 font-bold mb-2">Class:</label>
+                                        <select id="class" name="class" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-400">
+                                        <option value="" disabled selected>Select Course</option>    
+                                        <!-- Options will be dynamically populated -->
+                                            <?php while ($row = $classes->fetch_assoc()): ?>
+                                                <option value="<?php echo $row['id']; ?>"><?php echo $row['class_name']; ?></option>
+                                            <?php endwhile; ?>
+                                        </select>
+                                    </div>                                    
                                     <!-- Academic Year dropdown -->
                                     <div class="mb-4">
                                         <label for="academicYear" class="block text-gray-700 font-bold mb-2">Academic Year:</label>
@@ -102,16 +150,6 @@ $user_id = $_SESSION['user_id'];
                                         <label for="semester" class="block text-gray-700 font-bold mb-2">Semester:</label>
                                         <select id="semester" name="semester" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-400">
                                             <!-- Options will be dynamically populated -->
-                                        </select>
-                                    </div>
-                                    <!-- Course dropdown -->
-                                    <div class="mb-4">
-                                        <label for="class" class="block text-gray-700 font-bold mb-2">Class:</label>
-                                        <select id="class" name="class" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-400">
-                                            <!-- Options will be dynamically populated -->
-                                            <?php while ($row = $classes->fetch_assoc()): ?>
-                                                <option value="<?php echo $row['id']; ?>"><?php echo $row['class_name']; ?></option>
-                                            <?php endwhile; ?>
                                         </select>
                                     </div>
                                     <!-- Year and Section dropdown -->
@@ -208,12 +246,9 @@ $user_id = $_SESSION['user_id'];
                             // Output data of each row
                             while ($row = $result->fetch_assoc()) {
                                 echo "<div class='bg-white p-4 rounded-lg shadow-lg mb-4'>";
-                                echo "<h2 class='text-lg font-semibold'>Class ID: " . $row["class_id"] . "</h2>";
+                                echo "<h2 class='text-lg font-semibold'>Class: " . $row["course_name"] . " " . $row["year_level"] . " - " . $row["section"] . "</h2>";
                                 echo "<p>Academic Year: " . $row["academic_year"] . "</p>";
                                 echo "<p>Semester: " . $row["semester_name"] . "</p>";
-                                echo "<p>Course: " . $row["course_name"] . "</p>";
-                                echo "<p>Year Level: " . $row["year_level"] . "</p>";
-                                echo "<p>Section: " . $row["section"] . "</p>";
                                 echo "<p>Subject: " . $row["subject_name"] . "</p>";
                                 echo "<p>Faculty: " . $row["faculty_name"] . "</p>";
                                 echo "<p>Time Start: " . $row["time_start"] . "</p>";
@@ -247,11 +282,48 @@ $user_id = $_SESSION['user_id'];
             </div>
         </div>
     </div>
+    <!-- Modal HTML structure -->
+<div id="myModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <p id="modalMessage"></p>
+    </div>
+</div>
 
     <script src="scripts/logout.js"></script>
     <script src="scripts/functions.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
+// Get the modal
+    var modal = document.getElementById("myModal");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    // Function to show modal with message
+    function showModal(message) {
+        var modalMessage = document.getElementById("modalMessage");
+        modalMessage.innerText = message;
+        modal.style.display = "block";
+    }
+
+    // Check if there's a success message in session and display modal
+    <?php if(isset($_SESSION['success'])): ?>
+        showModal("<?php echo $_SESSION['success']; ?>");
+        <?php unset($_SESSION['success']); ?>
+    <?php endif; ?>
+
+    // Check if there's an error message in session and display modal
+    <?php if(isset($_SESSION['error'])): ?>
+        showModal("<?php echo $_SESSION['error']; ?>");
+        <?php unset($_SESSION['error']); ?>
+    <?php endif; ?>
+
         $(document).ready(function() {
             $('#class').on('change', function() {
                 var classId = $(this).val();

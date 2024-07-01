@@ -179,40 +179,40 @@
                                     <h2 class="text-xl font-semibold mt-4">My Reservation/s</h2>
                                 </div>
 
-    <div id="eventsList" class="bg-white shadow overflow-y-auto sm:rounded-lg flex-1">
-        <ul id="eventsListUl" class="divide-y divide-gray-200 flex flex-col">
-            <?php
-            // Display reservations
-            if ($my_reservation_result->num_rows > 0) {
-                while ($row = $my_reservation_result->fetch_assoc()) {
-                    echo '<li class="p-4 border-gray-200 border-b">';
-                    echo '<h3 class="text-lg font-bold mb-2">' . htmlspecialchars($row["facility_name"]) . '</h3>';
-                    echo '<p class="text-gray-600 mb-2">Reservation Date: ' . htmlspecialchars($row["reservation_date"]) . '</p>';
-                    echo '<p class="text-gray-600 mb-2">Start Time: ' . htmlspecialchars($row["start_time"]) . '</p>';
-                    echo '<p class="text-gray-600 mb-2">End Time: ' . htmlspecialchars($row["end_time"]) . '</p>';
-                    
-                    // Check if the reservation is declined and display rejection reason if available
-                    if ($row["reservation_status"] === 'Declined') {
-                        echo '<p class="text-red-600 font-bold">Reservation Status: ' . htmlspecialchars($row["reservation_status"]) . '</p>';
-                        echo '<p class="text-red-600 font-bold">Rejection Reason: ' . htmlspecialchars($row["rejection_reason"]) . '</p>';
-                    } else {
-                        echo '<p class="italic">Reservation Status: ' . htmlspecialchars($row["reservation_status"]) . '</p>';
-                    }
-                    
-                    // Add buttons for deleting and editing reservations
-                    echo '<div class="flex justify-between">';
-                    echo '<button onclick="editReservation(' . $row["id"] . ')" class="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-yellow-600">Edit</button>';
-                    echo '<button onclick="deleteReservation(' . $row["id"] . ')" class="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600">Delete</button>';
-                    echo '</div>';
-                    
-                    echo '</li>';
-                }
-            } else {
-                echo '<li>No reservations found</li>';
-            }
-            ?>
-        </ul>
-    </div>
+                                <div id="eventsList" class="bg-white shadow overflow-y-auto sm:rounded-lg flex-1">
+                                    <ul id="eventsListUl" class="divide-y divide-gray-200 flex flex-col">
+                                        <?php
+                                        // Display reservations
+                                        if ($my_reservation_result->num_rows > 0) {
+                                            while ($row = $my_reservation_result->fetch_assoc()) {
+                                                echo '<li class="p-4 border-gray-200 border-b">';
+                                                echo '<h3 class="text-lg font-bold mb-2">' . htmlspecialchars($row["facility_name"]) . '</h3>';
+                                                echo '<p class="text-gray-600 mb-2">Reservation Date: ' . htmlspecialchars($row["reservation_date"]) . '</p>';
+                                                echo '<p class="text-gray-600 mb-2">Start Time: ' . htmlspecialchars($row["start_time"]) . '</p>';
+                                                echo '<p class="text-gray-600 mb-2">End Time: ' . htmlspecialchars($row["end_time"]) . '</p>';
+                                                
+                                                // Check if the reservation is declined and display rejection reason if available
+                                                if ($row["reservation_status"] === 'Declined') {
+                                                    echo '<p class="text-red-600 font-bold">Reservation Status: ' . htmlspecialchars($row["reservation_status"]) . '</p>';
+                                                    echo '<p class="text-red-600 font-bold">Rejection Reason: ' . htmlspecialchars($row["rejection_reason"]) . '</p>';
+                                                } else {
+                                                    echo '<p class="italic">Reservation Status: ' . htmlspecialchars($row["reservation_status"]) . '</p>';
+                                                }
+                                                
+                                                // Add buttons for deleting and editing reservations
+                                                echo '<div class="flex justify-between">';
+                                                echo '<button onclick="editReservation(' . $row["id"] . ')" class="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-yellow-600">Edit</button>';
+                                                echo '<button onclick="deleteReservation(' . $row["id"] . ')" class="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600">Delete</button>';
+                                                echo '</div>';
+                                                
+                                                echo '</li>';
+                                            }
+                                        } else {
+                                            echo '<li>No reservations found</li>';
+                                        }
+                                        ?>
+                                    </ul>
+                                </div>
 
 
                             <div>
@@ -238,7 +238,7 @@
                         <div class="w-1/2">
                             <div class="flex flex-col space-y-2">
                                 <label for="facilityName" class="text-gray-700">Facility Name:</label>
-                                <input type="text" id="facilityName" name="facilityName" class="border border-gray-300 rounded-md p-2" readonly required>
+                                <input type="text" id="facilityName" name="facilityName" class="border border-gray-300 bg-gray-300 rounded-md p-2" readonly required>
                             </div>
                         </div>
                         <div class="w-1/2">
@@ -267,9 +267,9 @@
                         </div>
                     </div>
                     <div class="flex flex-col space-y-2">
-        <label for="purpose" class="text-gray-700">Purpose:</label>
-        <input type="text" id="purpose" name="purpose" class="border border-gray-300 rounded-md p-2">
-    </div>
+                        <label for="purpose" class="text-gray-700">Purpose:</label>
+                        <input type="text" id="purpose" name="purpose" class="border border-gray-300 rounded-md p-2">
+                    </div>
 
                     <div class="flex flex-col space-y-2">
                         <label for="additionalInfo" class="text-gray-700">Additional Information:</label>
@@ -466,63 +466,55 @@
                 });
 
             // Handle form submission
-            const reserveButtons = document.querySelectorAll('.reserve-button');
-            reserveButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const facilityName = this.closest('.facility-card').getAttribute('data-facility-name');
-                    facilityNameInput.value = facilityName;
-                    reservationModal.classList.remove('hidden');
-                });
-            });
+const reserveButton = document.getElementById('reserveButton');
+reserveButton.addEventListener('click', function() {
+    const facilityName = document.getElementById('facilityName').value;
+    const reservationDate = document.getElementById('reservationDate').value;
+    const startTime = document.getElementById('startTime').value;
+    const endTime = document.getElementById('endTime').value;
+    const purpose = document.getElementById('purpose').value; // Add this line to get the purpose field
 
-            const refreshPage = () => {
-                location.reload();
-            };
+    if (facilityName === '' || reservationDate === '' || startTime === '' || endTime === '' || purpose === '') { // Update this line to include purpose field check
+        alert('Please fill in all required fields.');
+        return;
+    }
 
-            const reserveButton = document.getElementById('reserveButton');
-    reserveButton.addEventListener('click', function() {
-        const facilityName = document.getElementById('facilityName').value;
-        const reservationDate = document.getElementById('reservationDate').value;
-        const startTime = document.getElementById('startTime').value;
-        const endTime = document.getElementById('endTime').value;
+    const reservationForm = document.getElementById('reservationForm');
+    const formData = new FormData(reservationForm);
 
-        if (facilityName === '' || reservationDate === '' || startTime === '' || endTime === '') {
-            alert('Please fill in all required fields.');
-            return;
+    fetch('reserve_facility.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
         }
+        return response.json(); // Parse response as JSON
+    })
+    .then(data => {
+        if (data.success) {
+            // Reservation was successful, show success modal
+            reservationModal.classList.add('hidden');
+            const successModal = document.getElementById('successModal');
+            successModal.classList.remove('hidden');
+            setTimeout(function() {
+                location.reload(); // Reload the page after 2 seconds
+            }, 2000);
+        } else {
+            // Reservation failed, show error modal with error message
+            const errorModal = document.getElementById('errorModal');
+            const errorList = document.getElementById('errorList');
+            errorList.innerHTML = '<li>' + data.error + '</li>';
+            errorModal.classList.remove('hidden');
+        }
+    })
 
-        const reservationForm = document.getElementById('reservationForm');
-        const formData = new FormData(reservationForm);
-
-        fetch('reserve_facility.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json(); // Parse response as JSON
-        })
-        .then(data => {
-            if (data.success) {
-                // Reservation was successful, show success modal
-                reservationModal.classList.add('hidden');
-                const successModal = document.getElementById('successModal');
-                successModal.classList.remove('hidden');
-                setTimeout(refreshPage, 3000);
-            } else {
-                // Reservation failed, show error modal with error message
-                const errorModal = document.getElementById('errorModal');
-                const errorList = document.getElementById('errorList');
-                errorList.innerHTML = '<li>' + data.error + '</li>';
-                errorModal.classList.remove('hidden');
-            }
-        })
-        .catch(error => {
-            console.error('Error submitting reservation:', error);
-        });
+    .catch(error => {
+        console.error('Error submitting reservation:', error);
     });
+});
+
 
 
             // Close error modal

@@ -1,5 +1,37 @@
 <?php
-require_once "config.php";
+// Start the session
+session_start();
+
+// Check if the user is logged in
+if (!isset($_SESSION['user_id'])) {
+    // Redirect to the login page
+    header("Location: index.html");
+    exit();
+}
+
+// Check if the user has the required role
+if ($_SESSION['role'] !== 'Admin' && $_SESSION['role'] !== 'Registrar') {
+    // Redirect to a page indicating unauthorized access
+    header("Location: index.html");
+    exit();
+}
+
+// Fetch reservations from the database for the current user
+$servername = "localhost";
+$username = "root";
+$db_password = ""; // Change this if you have set a password for your database
+$dbname = "reservadb";
+
+// Create connection
+$conn = new mysqli($servername, $username, $db_password, $dbname);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Fetch the user ID from the session data
+$user_id = $_SESSION['user_id'];
 // Query to fetch user data from the database
 $sql = "SELECT * FROM users";
 $result = $conn->query($sql);
@@ -32,11 +64,7 @@ $result = $conn->query($sql);
             <main class="flex-1 p-4 h-screen">
                 <div class="flex items-center justify-between p-1 rounded-md">
                     <div class="flex items-center">
-                        <input type="text" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-400" placeholder="Search...">
-                        <button class="ml-2 px-4 py-2 bg-plv-blue text-white rounded-md flex items-center justify-center hover:bg-plv-highlight focus:outline-none focus:ring focus:ring-plv-highlight">
-                            <img src="img/icons8-search-50.png" alt="Search Icon" class="w-4 h-4 mr-2">
-                            Search
-                        </button>
+                        <input type="text" id="searchInput" oninput="searchUsers()" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-400" placeholder="Search...">
                     </div>
                     <div>
                         <button onclick="showUserForm()" class="ml-auto px-4 py-2 bg-plv-blue text-white rounded-md flex items-center justify-center hover:bg-plv-highlight focus:outline-none focus:ring focus:ring-plv-highlight">
@@ -57,7 +85,8 @@ $result = $conn->query($sql);
                         <table class="min-w-full">
                             <thead>
                                 <tr>
-                                    <th class="px-3 py-3 bg-gray-100 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th class="px-3 py-3 bg-gray-100 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">First Name</th>
+                                    <th class="px-3 py-3 bg-gray-100 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Last Name</th>
                                     <th class="px-6 py-3 bg-gray-100 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Email</th>
                                     <th class="px-6 py-3 bg-gray-100 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Department</th>
                                     <th class="px-6 py-3 bg-gray-100 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Role</th>
@@ -66,31 +95,26 @@ $result = $conn->query($sql);
                             </thead>
                             <tbody id="userList" class="bg-white divide-y divide-gray-200">
                                 <?php
-                                // Output user data dynamically
                                 if ($result->num_rows > 0) {
                                     while ($row = $result->fetch_assoc()) {
-                                        echo "<tr>";
-                                        echo "<td class='px-3 py-4 whitespace-nowrap'>" . $row["first_name"] . " " . $row["last_name"] . "</td>";
-                                        echo "<td class='px-6 py-4 whitespace-nowrap'>" . $row["email"] . "</td>";
-                                        echo "<td class='px-6 py-4 whitespace-nowrap'>" . $row["department"] . "</td>";
-                                        echo "<td class='px-6 py-4 whitespace-nowrap'>" . $row["userRole"] . "</td>";
-                                        echo "<td class='px-6 py-4 whitespace-nowrap'>
-                                                <div class='flex items-center'>
-                                                    <button type='button' class='inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2' onclick='editUser(" . $row["id"] . ")'>
-                                                        Edit
-                                                    </button>
-                                                    <button type='button' class='ml-2 inline-flex justify-center rounded-md border border-red-500 shadow-sm px-4 py-2 bg-red-500 text-sm font-medium text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2' onclick='deleteUser(" . $row["id"] . ")'>
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            </td>";
+                                        echo "<tr id='userRow_" . $row["id"] . "'>";
+                                        echo "<td class='px-3 py-4 whitespace-nowrap'><input type='text' id='firstName_" . $row["id"] . "' value='" . $row["first_name"] . "' class='bg-transparent border-none w-full' readonly></td>";
+                                        echo "<td class='px-6 py-4 whitespace-nowrap'><input type='text' id='lastName_" . $row["id"] . "' value='" . $row["last_name"] . "' class='bg-transparent border-none w-full' readonly></td>";
+                                        echo "<td class='px-6 py-4 whitespace-nowrap'><input type='email' id='email_" . $row["id"] . "' value='" . $row["email"] . "' class='bg-transparent border-none w-full' readonly></td>";
+                                        echo "<td class='px-6 py-4 whitespace-nowrap'><input type='text' id='department_" . $row["id"] . "' value='" . $row["department"] . "' class='bg-transparent border-none w-full' readonly></td>";
+                                        echo "<td class='px-6 py-4 whitespace-nowrap'><input type='text' id='userRole_" . $row["id"] . "' value='" . $row["userRole"] . "' class='bg-transparent border-none w-full' readonly></td>";
+                                        echo "<td class='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>";
+                                        echo "<button onclick='editUser(" . $row["id"] . ")' class='inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'>Edit</button>";
+                                        echo "<button onclick='deleteUser(" . $row["id"] . ")' class='ml-2 inline-flex justify-center rounded-md border border-red-500 shadow-sm px-4 py-2 bg-red-500 text-sm font-medium text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2'>Delete</button>";
+                                        echo "</td>";
                                         echo "</tr>";
                                     }
                                 } else {
-                                    echo "<tr><td colspan='4'>No users found</td></tr>";
+                                    echo "<tr><td colspan='5' class='text-center'>No users found</td></tr>";
                                 }
                                 ?>
                             </tbody>
+
                         </table>
                     </div>
                 </div>
@@ -197,15 +221,139 @@ $result = $conn->query($sql);
     <script src="scripts/accMngmnt.js"></script>
     <!-- JavaScript for edit and delete actions -->
     <script>
-        function editUser(userId) {
-            // Implement edit user functionality here
-            console.log("Edit user with ID: " + userId);
-        }
+        //search
+function searchUsers() {
+    var input, filter, table, tr, i, j, txtValue;
+    input = document.getElementById("searchInput");
+    filter = input.value.toUpperCase();
+    table = document.getElementById("userList");
+    tr = table.getElementsByTagName("tr");
 
-        function deleteUser(userId) {
-            // Implement delete user functionality here
-            console.log("Delete user with ID: " + userId);
+    // Loop through all table rows
+    for (i = 0; i < tr.length; i++) {
+        var matchFound = false;
+        var tdArray = tr[i].getElementsByTagName("td");
+        // Loop through all table columns (except Actions)
+        for (j = 0; j < tdArray.length - 1; j++) {
+            var td = tdArray[j];
+            if (td) {
+                txtValue = td.getElementsByTagName("input")[0].value.toUpperCase();
+                if (txtValue.indexOf(filter) > -1) {
+                    matchFound = true;
+                    break;
+                }
+            }
         }
+        // Show or hide table row based on matchFound
+        if (matchFound) {
+            tr[i].style.display = "";
+        } else {
+            tr[i].style.display = "none";
+        }
+    }
+}
+
+function editUser(userId) {
+    var firstNameInput = document.getElementById('firstName_' + userId);
+    var lastNameInput = document.getElementById('lastName_' + userId);
+    var emailInput = document.getElementById('email_' + userId);
+    var departmentInput = document.getElementById('department_' + userId);
+    var userRoleInput = document.getElementById('userRole_' + userId);
+
+    // Make inputs editable
+    firstNameInput.readOnly = false;
+    lastNameInput.readOnly = false;
+    emailInput.readOnly = false;
+    departmentInput.readOnly = false;
+    userRoleInput.readOnly = false;
+
+    // Change "Edit" button to "Save" button
+    var editButton = document.querySelector(`button[onclick='editUser(${userId})']`);
+    editButton.textContent = 'Save';
+    editButton.onclick = function() { saveChanges(userId); };
+}
+
+function saveChanges(userId) {
+    var firstNameInput = document.getElementById('firstName_' + userId);
+    var lastNameInput = document.getElementById('lastName_' + userId);
+    var emailInput = document.getElementById('email_' + userId);
+    var departmentInput = document.getElementById('department_' + userId);
+    var userRoleInput = document.getElementById('userRole_' + userId);
+
+    var updatedUserData = {
+        userId: userId,
+        firstName: firstNameInput.value,
+        lastName: lastNameInput.value,
+        email: emailInput.value,
+        department: departmentInput.value,
+        userRole: userRoleInput.value
+    };
+
+    fetch('update_user.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatedUserData)
+    })
+    .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Handle success scenario
+                    console.log('User data updated successfully');
+                    firstNameInput.readOnly = true;
+                    lastNameInput.readOnly = true;
+                    emailInput.readOnly = true;
+                    departmentInput.readOnly = true;
+                    userRoleInput.readOnly = true;
+
+                    // Change "Save" button back to "Edit" button
+                    var editButton = document.getElementById('editButton_' + userId);
+                    if (editButton) {
+                        editButton.textContent = 'Edit';
+                        editButton.onclick = function() { editUser(userId); };
+                    }
+
+                    // Reload the screen after successful update
+                    window.location.reload();
+                }else {
+            // Handle error scenario
+            console.error('Error updating user data');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+function deleteUser(userId) {
+    if (confirm('Are you sure you want to delete this user?')) {
+        fetch('delete_user.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ userId: userId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Handle success scenario, e.g., remove the user row from the table
+                var userRow = document.getElementById('userRow_' + userId);
+                if (userRow) {
+                    userRow.remove();
+                }
+                console.log('User deleted successfully');
+            } else {
+                // Handle error scenario
+                console.error('Error deleting user');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+}
+
 
         document.addEventListener("DOMContentLoaded", function () {
             // Check if the success parameter is present in the URL

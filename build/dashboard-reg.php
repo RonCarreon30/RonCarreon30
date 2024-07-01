@@ -33,6 +33,7 @@ if ($conn->connect_error) {
 // Fetch the user ID from the session data
 $user_id = $_SESSION['user_id'];
 
+
 // Fetch the user data from the database
 $user_query = "SELECT * FROM users WHERE id = '$user_id'";
 $user_result = $conn->query($user_query);
@@ -66,64 +67,56 @@ $user_data = $user_result->fetch_assoc();
             <!-- Main Content goes here-->
             <main class="flex flex-1 p-4">
                 <div class="w-3/4 pr-4">
-                  <div class="mb-4">
-                    <div class="relative bg-blue-300 text-white p-6 m-2 rounded-md lg:h-32 xl:h-40 md:h-24 sm:h-20 flex justify-between max-h-40 overflow-hidden">
-                      <div class="w-full md:w-3/4">
-                          <h2 class="text-lg lg:text-xl xl:text-2xl font-semibold pb-1">Welcome, <?php echo $user_data['first_name'] . ' ' . $user_data['last_name']; ?></h2>
-                          <p class="text-sm lg:text-base">Welcome to your dashboard! From here, you can efficiently manage room loadings, view schedules, and input essential data for classes and other academic-related management. If you require assistance, please don't hesitate to reach out to our support team.</p>
-                      </div>
-                      <div class="hidden md:block w-1/4">
-                          <img class="h-auto w-full" src="img/undraw_hello_re_3evm.svg" alt="Greeting SVG">
-                      </div>
+                    <div class="mb-4">
+                        <!--Banner-->
+                        <div class="relative bg-blue-300 text-white p-6 m-2 rounded-md lg:h-32 xl:h-40 md:h-24 sm:h-20 flex justify-between max-h-40 overflow-hidden">
+                            <div class="w-full md:w-3/4">
+                                <h2 class="text-lg lg:text-xl xl:text-2xl font-semibold pb-1">Welcome, <?php echo $user_data['first_name'] . ' ' . $user_data['last_name']; ?></h2>
+                                <p class="text-sm lg:text-base">Welcome to your dashboard! From here, you can efficiently manage room loadings, view schedules, and input essential data for classes and other academic-related management. If you require assistance, please don't hesitate to reach out to our support team.</p>
+                            </div>
+                            <div class="hidden md:block w-1/4">
+                                <img class="h-auto w-full" src="img/undraw_hello_re_3evm.svg" alt="Greeting SVG">
+                            </div>
+                        </div>
                     </div>
-                  </div>
-                  <!-- Quick Links and Notifs -->
-                  <div class="grid grid-cols-2 m-2 gap-4">
-                    <!-- Quick Links -->
-                    <div class="rounded bg-white p-4 shadow-md">
-                      <h2 class="mb-2 text-lg font-bold">Quick Links</h2>
-                      <ul>
-                        <li>
-                          <a href="fac" class="flex items-center text-blue-600 hover:text-blue-900"> <i class="fas fa-user fa-fw mr-2"></i> Faculty Management </a>
-                        </li>
-                        <li>
-                          <a href="#" class="flex items-center text-blue-600 hover:text-blue-900"> <i class="fas fa-book fa-fw mr-2"></i> Subject Management </a>
-                        </li>
-                        <li>
-                          <a href="#" class="flex items-center text-blue-600 hover:text-blue-900"> <i class="fas fa-calendar fa-fw mr-2"></i> Class Scheduling </a>
-                        </li>
-                      </ul>
+                    <!-- Widgets -->
+                    <div class="grid grid-cols-2 m-2 gap-4">
+                        <!-- Total Users -->
+                        <div class="flex items-center rounded bg-white p-6 shadow-md h-40">
+                            <i class="fas fa-users fa-3x w-1/4 text-blue-600"></i>
+                            <div class="ml-4 w-3/4">
+                                <h2 class="text-lg font-bold">Total Users</h2>
+                                <p class="text-2xl">100</p>
+                            </div>
+                        </div>
+
+                        <!-- Total Rooms -->
+                        <div class="flex items-center rounded bg-white p-6 shadow-md h-40">
+                            <i class="fas fa-door-closed fa-3x w-1/4 text-blue-600"></i>
+                            <div class="ml-4 w-3/4">
+                                <h2 class="text-lg font-bold">Total Rooms</h2>
+                                <p class="text-2xl">50</p>
+                            </div>
+                        </div>
+
+                        <!-- Total Facilities -->
+                        <div class="flex items-center rounded bg-white p-6 shadow-md h-40">
+                            <i class="fas fa-building fa-3x w-1/4 text-blue-600"></i>
+                            <div class="ml-4 w-3/4">
+                                <h2 class="text-lg font-bold">Total Facilities</h2>
+                                <p class="text-2xl">20</p>
+                            </div>
+                        </div>
+
+                        <!-- New Password Requests -->
+                        <div class="flex items-center rounded bg-white p-6 shadow-md h-40">
+                            <i class="fas fa-key fa-3x w-1/4 text-blue-600"></i>
+                            <div class="ml-4 w-3/4">
+                                <h2 class="text-lg font-bold">New Password Requests</h2>
+                                <p class="text-2xl">5</p>
+                            </div>
+                        </div>
                     </div>
-                    <!-- From Notif -->
-                    <div class="rounded bg-white p-4 shadow-md">
-                      <h2 class="mb-2 text-lg font-bold">From Your Notifications</h2>
-                      <ul>
-                        <li class="flex items-center"><i class="fas fa-clock fa-fw mr-2"></i> Schedule pending approval</li>
-                        <li class="flex items-center"><i class="fas fa-check fa-fw mr-2"></i> Approved schedule</li>
-                        <li class="flex items-center"><i class="fas fa-calendar fa-fw mr-2"></i> Upcoming event</li>
-                      </ul>
-                    </div>
-                  </div>
-                  <!-- Key Metrics and News and Announcements -->
-                  <div class="grid grid-cols-2 m-2 gap-4">
-                    <!-- Key Metrics -->
-                    <div class="rounded bg-white p-4 shadow-md">
-                      <h2 class="mb-2 text-lg font-bold">Key Metrics</h2>
-                      <ul>
-                        <li class="flex items-center"><i class="fas fa-user fa-fw mr-2"></i> Faculty members: 100</li>
-                        <li class="flex items-center"><i class="fas fa-book fa-fw mr-2"></i> Subjects offered: 50</li>
-                        <li class="flex items-center"><i class="fas fa-calendar fa-fw mr-2"></i> Schedules pending approval: 20</li>
-                      </ul>
-                    </div>
-                    <!-- News and Announcements -->
-                    <div class="rounded bg-white p-4 shadow-md">
-                      <h2 class="mb-2 text-lg font-bold">News and Announcements</h2>
-                      <ul>
-                        <li class="flex items-center"><i class="fas fa-newspaper fa-fw mr-2"></i> News item 1</li>
-                        <li class="flex items-center"><i class="fas fa-newspaper fa-fw mr-2"></i> News item 2</li>
-                      </ul>
-                    </div>
-                  </div>
                 </div>
                 <!-- Calendar -->
                 <div class="flex-grow pl-4">

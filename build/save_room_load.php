@@ -48,32 +48,65 @@ if (!$building) $errors[] = "Building is required.";
 if (!$room) $errors[] = "Room is required.";
 
 if (!empty($errors)) {
+    // Redirect back to the referrer and display error modal
     $_SESSION['errors'] = $errors;
-    $referrer = $_SERVER['HTTP_REFERER']; // Get the referrer URL
-    header("Location: $referrer");
+    header("Location: " . $_SERVER['HTTP_REFERER']);
     exit();
 }
 
+// Check for overlapping schedules
+$overlapQuery = "
+    SELECT id 
+    FROM classes 
+    WHERE room_id = ? 
+      AND id != ? 
+      AND day = ? 
+      AND NOT (
+            (time_end <= ?) OR 
+            (time_start >= ?)
+          )
+";
+
+$overlapStmt = $conn->prepare($overlapQuery);
+if (!$overlapStmt) {
+    die("Preparation failed: " . $conn->error);
+}
+$overlapStmt->bind_param('iisss', $room, $class_id, $day, $startTime, $endTime);
+$overlapStmt->execute();
+$overlapResult = $overlapStmt->get_result();
+
+if ($overlapResult->num_rows > 0) {
+    // Overlap found, redirect back to referrer and display error modal
+    $_SESSION['overlap_error'] = "The class schedule overlaps with another class.";
+    header("Location: " . $_SERVER['HTTP_REFERER']);
+    exit();
+}
+
+$overlapStmt->close();
+
 // Prepare the UPDATE statement
-$stmt = $conn->prepare("
+$sql = "
     UPDATE classes
-    SET academic_year_id = ?, semester_id = ?, course_id = ?, year_section_id = ?, subject_id = ?, faculty_id = ?, time_start = ?, time_end = ?, day = ?, room_type = ?, building = ?, room_id = ?
+    SET academic_year_id = ?, semester_id = ?, course_id = ?, year_section_id = ?, subject_id = ?, faculty_id = ?, time_start = ?, time_end = ?, day = ?, room_type = ?, building = ?, room_id = ?, isScheduled = ?
     WHERE id = ?
-");
+";
+$stmt = $conn->prepare($sql);
+if (!$stmt) {
+    die("Preparation failed: " . $conn->error);
+}
 
-$stmt->bind_param("iiiiisssssssi", $academicYear, $semester, $course, $yearSection, $subject, $faculty, $startTime, $endTime, $day, $room_type, $building, $room, $class_id);
+$isScheduled = 1; // Set isScheduled to true (1)
+$stmt->bind_param("iiiiisssssssii", $academicYear, $semester, $course, $yearSection, $subject, $faculty, $startTime, $endTime, $day, $room_type, $building, $room, $isScheduled, $class_id);
 
-// Execute the statement
+// Execute the statement and check for errors
 if ($stmt->execute()) {
+    // Redirect back to referrer and display success modal
     $_SESSION['success'] = "Class successfully updated!";
-    $referrer = $_SERVER['HTTP_REFERER']; // Get the referrer URL
-    header("Location: $referrer");
-    exit();
+    header("Location: " . $_SERVER['HTTP_REFERER']);
 } else {
-    $_SESSION['errors'] = ["There was an error updating the class. Please try again."];
-    $referrer = $_SERVER['HTTP_REFERER']; // Get the referrer URL
-    header("Location: $referrer");
-    exit();
+    // Redirect back to referrer and display error modal
+    $_SESSION['error'] = "There was an error updating the class: " . $stmt->error;
+    header("Location: " . $_SERVER['HTTP_REFERER']);
 }
 
 // Close the statement and connection

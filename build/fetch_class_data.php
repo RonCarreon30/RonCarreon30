@@ -31,11 +31,11 @@ if (isset($_POST['class_id']) && !empty($_POST['class_id'])) {
     $data['semesters'] = $semesters;
 
     // 3. Fetch Year & Section
-    $yearSectionQuery = "SELECT id, year_level FROM year_section WHERE id IN (SELECT year_section_id FROM classes WHERE id = $classId)";
+    $yearSectionQuery = "SELECT id, year_level, section FROM year_section WHERE id IN (SELECT year_section_id FROM classes WHERE id = $classId)";
     $yearSectionResult = $conn->query($yearSectionQuery);
     $yearSection = '<option value="" disabled selected>Select Year Level</option>';
     while ($row = $yearSectionResult->fetch_assoc()) {
-        $yearSection .= '<option value="' . $row['id'] . '">' . $row['year_level'] . '</option>';
+        $yearSection .= '<option value="' . $row['id'] . '">' . $row['year_level'] . ' - ' . $row['section'] . '</option>';
     }
     $data['yearSections'] = $yearSection;
 

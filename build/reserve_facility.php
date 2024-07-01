@@ -18,9 +18,9 @@ if ($_SESSION['role'] !== 'Student Rep') {
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Validate form data
-    if (empty($_POST['reservationDate']) || empty($_POST['startTime']) || empty($_POST['endTime']) || empty($_POST['facilityName']) || empty($_POST['department'])) {
+    if (empty($_POST['reservationDate']) || empty($_POST['startTime']) || empty($_POST['endTime']) || empty($_POST['facilityName']) || empty($_POST['department']) || empty($_POST['purpose'])) {
         // Return error response if any required field is empty
-        echo json_encode(array("success" => false, "error" => "Reservation date, start time, end time, facility name, and department are required."));
+        echo json_encode(array("success" => false, "error" => "Reservation date, start time, end time, facility name, department, and purpose are required."));
         exit();
     }
 
@@ -29,9 +29,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $reservation_date = $_POST['reservationDate'];
     $start_time = $_POST['startTime'];
     $end_time = $_POST['endTime'];
-    $additional_info = $_POST['additionalInfo'];
+    $additional_info = isset($_POST['additionalInfo']) ? $_POST['additionalInfo'] : ''; // Check if additionalInfo is set
     $facility_name = $_POST['facilityName']; // Get facility name from the form
     $department = $_POST['department']; // Get department from the form
+    $purpose = $_POST['purpose']; // Get purpose from the form
     $reservation_status = 'In Review'; // Set reservation status to 'In Review'
     
     // Get facility ID based on facility name
@@ -78,11 +79,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         $stmt->close();
 
-        // Prepare SQL statement
-        $sql = "INSERT INTO reservations (user_id, user_department, facility_id, facility_name, reservation_date, start_time, end_time, additional_info, reservation_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+// Prepare SQL statement
+        $sql = "INSERT INTO reservations (user_id, user_department, facility_id, facility_name, reservation_date, start_time, end_time, purpose, additional_info, reservation_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("isissssss", $user_id, $department, $facility_id, $facility_name, $reservation_date, $start_time, $end_time, $additional_info, $reservation_status);
-
+        $stmt->bind_param("isisssssss", $user_id, $department, $facility_id, $facility_name, $reservation_date, $start_time, $end_time, $purpose, $additional_info, $reservation_status);
+        
         // Execute SQL statement
         if ($stmt->execute()) {
             // Reservation saved successfully

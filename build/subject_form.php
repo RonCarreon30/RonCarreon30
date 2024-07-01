@@ -25,8 +25,10 @@
                 <input type="text" name="subjectCode[]" placeholder="Enter subject code" required class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white">
             </div>
         </div>
-        <button type="button" onclick="addSubjectField()" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Add Subject</button>
-        <button type="submit" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Submit</button>
+    <button type="button" onclick="addSubjectField()" class="mb-4 bg-gray-300 hover:bg-blue-700 text-white rounded-full w-6 h-6 flex items-center justify-center">
+    <i class="fas fa-plus"></i>
+</button>
+        <button type="submit" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Save</button>
     </form>
 </div>
 
@@ -83,6 +85,7 @@
         function addSubjectField() {
             const subjectFields = document.getElementById('subjectFields');
             const newSubjectField = `
+                <hr class="my-4 border-gray-300">
                 <div class="subject-group">
                     <div class="w-full px-3 mb-6">
                         <label for="subjectName" class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2">Subject Name:</label>
@@ -93,6 +96,7 @@
                         <input type="text" name="subjectCode[]" placeholder="Enter subject code" required class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white">
                     </div>
                 </div>
+
             `;
             subjectFields.insertAdjacentHTML('beforeend', newSubjectField);
         }

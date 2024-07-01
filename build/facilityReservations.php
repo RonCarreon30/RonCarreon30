@@ -17,10 +17,7 @@ if ($_SESSION['role'] !== 'Facility Head') {
 }
 
 // Fetch reservations from the database for the current user
-$servername = "localhost";
-$username = "root";
-$db_password = ""; // Change this if you have set a password for your database
-$dbname = "reservadb";
+include_once 'config.php';
 
 // Create connection
 $conn = new mysqli($servername, $username, $db_password, $dbname);
@@ -56,10 +53,7 @@ if ($reservation_result->num_rows > 0) {
         $reservations[] = $reservation;
     }
 }
-
 ?>
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -103,14 +97,68 @@ if ($reservation_result->num_rows > 0) {
             <main class="flex-1 p-4 overflow-y-auto">
                 <div class="flex h-full flex-row items-center space-x-4">
                     <div class="flex h-full w-8/12 flex-col space-y-2">
-                            
-                        <!-- For debugging purposes to get session data-->
-                        <div class="flex flex-col space-y-2 hidden">
-                            <label for="department" class="text-gray-700">Department:</label>
-                            <input type="text" id="department" name="department" class="border border-gray-300 rounded-md p-2" value="<?php echo htmlspecialchars($head_department); ?>" readonly>
+                        <div class="flex justify-between items-center">
+                            <input type="text" id="search" placeholder="Search..." class="border rounded-md py-2 px-4" onkeyup="filterReservations()">
                         </div>
-                        <!-- For debugging purposes to get session data-->
-
+                    <div id="eventsList" class="bg-white shadow overflow-y-auto sm:rounded-lg flex-1">
+                        <table class="w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Facility Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reservation Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Time</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Time</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purpose</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="reservationTableBody">
+                                <?php
+                                // Display reservations
+                                if ($review_reservation_result->num_rows > 0) {
+                                    // Reset pointer to the beginning of the result set
+                                    mysqli_data_seek($review_reservation_result, 0);
+                                    
+                                    while ($row = $review_reservation_result->fetch_assoc()) {
+                                        // Add unique IDs to each row
+                                        $reservationId = $row["id"];
+                                        echo '<tr class="reservation-item" data-reservation-id="' . $reservationId . '">';
+                                        echo '<td class="px-6 py-4 whitespace-nowrap">' . htmlspecialchars($row["facility_name"]) . '</td>';
+                                        echo '<td class="px-6 py-4 whitespace-nowrap">' . htmlspecialchars($row["reservation_date"]) . '</td>';
+                                        echo '<td class="px-6 py-4 whitespace-nowrap">' . htmlspecialchars($row["start_time"]) . '</td>';
+                                        echo '<td class="px-6 py-4 whitespace-nowrap">' . htmlspecialchars($row["end_time"]) . '</td>';
+                                        echo '<td class="px-6 py-4 whitespace-nowrap italic">' . htmlspecialchars($row["reservation_status"]) . '</td>';
+                                        echo '<td class="px-6 py-4 whitespace-nowrap">' . htmlspecialchars($row["purpose"]) . '</td>';
+                                        
+                                        // Conditionally show accept and decline buttons only for "In Review" reservations
+                                        if ($row["reservation_status"] === "Pending") {
+                                            echo '<td class="px-6 py-4 whitespace-nowrap">';
+                                            echo '<div class="flex">';
+                                            echo '<button onclick="declineReservation(' . $reservationId . ')" class="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600">Decline</button>';
+                                            echo '<button onclick="acceptReservation(' . $reservationId . ')" class="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-green-600">Accept</button>';
+                                            echo '</div>';
+                                            echo '</td>';
+                                        } else {
+                                            echo '<td class="px-6 py-4 whitespace-nowrap"></td>';
+                                        }
+                                        
+                                        echo '</tr>';
+                                    }
+                                } else {
+                                    echo '<tr><td colspan="8" class="px-6 py-4 text-center">No reservations found</td></tr>';
+                                }
+                                ?>
+                            </tbody>
+                        </table>
+                        
+                    </div>
+                    <!-- Add pagination controls above the table -->
+                    <div class="flex justify-center items-center space-x-2 mt-4">
+                        <button onclick="prevPage()" class="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600">&lt;&lt;</button>
+                        <span id="pagination" class="flex items-center space-x-2"></span>
+                        <button onclick="nextPage()" class="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600">&gt;&gt;</button>
+                    </div>
                     </div>
 
                     <div class="h-full border-l border-gray-300"></div>
@@ -254,53 +302,77 @@ document.addEventListener('DOMContentLoaded', function() {
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         events: <?php echo json_encode($reservations); ?>,
+        eventDidMount: function(info) {
+            // Manipulate the event element's style here
+            info.el.style.position = 'absolute';
+            info.el.style.left = '0';
+            info.el.style.right = '0';
+            info.el.style.top = '0';
+            info.el.style.bottom = '0';
+        },
         eventContent: function(info) {
-            console.log(info.event);
-            return info.event.title;
+            return {
+                html: `
+                    <div style="position: relative; z-index: 1;">
+                        ${info.event.title}<br>
+                        ${info.event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true, seconds: false })}
+                        ${info.event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true, seconds: false })}
+                    </div>
+                `
+            };
         }
+    });
+
+    // Event listener for clicking on FullCalendar events
+    calendar.on('eventClick', function(info) {
+        console.log('Clicked event:', info.event);
+        // Call the showModal function and pass the event details
+        showModal(info.event);
     });
 
     calendar.render();
-    
-    // Add event delegation for dynamically generated buttons
-    document.getElementById('eventsListUl').addEventListener('click', function(event) {
-        if (event.target.tagName === 'BUTTON') {
-            const reservationId = event.target.closest('.reservation-item').dataset.reservationId;
-            if (event.target.classList.contains('accept-btn')) {
-                acceptReservation(reservationId);
-            } else if (event.target.classList.contains('decline-btn')) {
-                declineReservation(reservationId);
-            }
-        }
-    });
 });
+
 
 // Function to show modal with reservation details
 function showModal(event) {
+    console.log('Showing modal for event:', event);
     const modal = document.getElementById('reservationsModal');
     const modalContent = modal.querySelector('#modalContent');
 
-    // Convert start and end dates to ISO format
-    const startDate = new Date(event.start).toISOString();
-    const endDate = new Date(event.end).toISOString();
+    // Convert start and end dates to local time
+    const startDate = new Date(event.start);
+    const endDate = new Date(event.end);
 
-    // Split ISO string to extract date and time
-    const startDateParts = startDate.split('T');
-    const endDateParts = endDate.split('T');
+    // Format options for date and time
+    const dateOptions = {
+        weekday: 'short', 
+        year: 'numeric', 
+        month: 'numeric', 
+        day: 'numeric',
+    };
+
+    const timeOptions = {
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
+    };
 
     modalContent.innerHTML = `
         <p><strong>Facility Name:</strong> ${event.title}</p>
-        <p><strong>Reservation Date:</strong> ${startDateParts[0]}</p>
-        <p><strong>Start Time:</strong> ${startDateParts[1]}</p>
-        <p><strong>End Time:</strong> ${endDateParts[1]}</p>
+        <p><strong>Reservation Date:</strong> ${startDate.toLocaleDateString(undefined, dateOptions)}</p>
+        <p><strong>Start Time:</strong> ${startDate.toLocaleTimeString(undefined, timeOptions)}</p>
+        <p><strong>End Time:</strong> ${endDate.toLocaleTimeString(undefined, timeOptions)}</p>
+        <!-- Add more details as needed -->
     `;
 
     modal.classList.remove('hidden');
 }
 
+
 // Function to close the modal
 function closeModal() {
-    const modal = document.getElementById('reservationModal');
+    const modal = document.getElementById('reservationsModal');
     modal.classList.add('hidden');
 }
 
@@ -461,6 +533,78 @@ function declineReservation(reservationId) {
         });
     };
 }
+
+// Pagination
+let currentPage = 1;
+const pageSize = 10; // Number of reservations per page
+
+function renderPagination(totalPages) {
+    const paginationElement = document.getElementById('pagination');
+    paginationElement.innerHTML = '';
+
+    // Create pagination controls
+    if (currentPage > 1) {
+        paginationElement.innerHTML += `<button onclick="prevPage()" class="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600">&lt;&lt;</button>`;
+    }
+
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === currentPage) {
+            paginationElement.innerHTML += `<span class="px-2 py-1 bg-blue-500 text-white rounded-md">${i}</span>`;
+        } else {
+            paginationElement.innerHTML += `<button onclick="goToPage(${i})" class="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600">${i}</button>`;
+        }
+    }
+
+    if (currentPage < totalPages) {
+        paginationElement.innerHTML += `<button onclick="nextPage()" class="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600">&gt;&gt;</button>`;
+    }
+}
+
+function goToPage(page) {
+    currentPage = page;
+    filterReservations();
+}
+
+function nextPage() {
+    currentPage++;
+    filterReservations();
+}
+
+function prevPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        filterReservations();
+    }
+}
+
+// Filter
+function filterReservations() {
+    const filterValue = document.getElementById('search').value.toUpperCase();
+    const rows = document.querySelectorAll('.reservation-item');
+    const totalPages = Math.ceil(rows.length / pageSize);
+
+    renderPagination(totalPages);
+
+    rows.forEach((row, index) => {
+        const facilityName = row.querySelector('td:first-child').textContent.toUpperCase();
+        if (facilityName.indexOf(filterValue) > -1) {
+            if (index >= (currentPage - 1) * pageSize && index < currentPage * pageSize) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Initial pagination rendering
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('.reservation-item');
+    const totalPages = Math.ceil(rows.length / pageSize);
+    renderPagination(totalPages);
+});
 </script>
 
 

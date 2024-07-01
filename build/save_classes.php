@@ -9,7 +9,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Check if the user has the required role
-if ($_SESSION['role'] !== 'Registrar') {
+if ($_SESSION['role'] !== 'Admin' && $_SESSION['role'] !== 'Registrar') {
     // Redirect to a page indicating unauthorized access
     header("Location: index.html");
     exit();
@@ -50,7 +50,7 @@ if (!$room_type) {  // Changed to 'room_type'
 // If there are errors, redirect back to the form with error messages
 if (!empty($errors)) {
     $_SESSION['errors'] = $errors;
-    header("Location: academic_admin.php#classes-form");
+    header("Location: dataSetup.php#classes-form");
     exit();
 }
 

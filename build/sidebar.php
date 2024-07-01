@@ -16,18 +16,16 @@
                 <a class="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-persian-blue" href="dashboard-reg.php" title="Dashboard">
                     <i class="fa-solid fa-dashboard"></i>
                 </a>
-                <a class="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-persian-blue" href="schedules.php" title="Schedules">
-                    <i class="fa-solid fa-calendar"></i>
-                </a>
-                <a class="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-persian-blue" href="accManagement.php" title="Account Management">
+                                <a class="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-persian-blue" href="accManagement.php" title="Account Management">
                     <i class="fa-solid fa-user"></i>
+                </a>
+                <a class="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-persian-blue" href="dataSetup.php" title="Data Setup">
+                    <i class="fa-solid fa-school"></i>
                 </a>
                 <a class="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-persian-blue" href="roomMngmnt.php" title="Room Management">
                     <i class="fa-solid fa-door-open"></i>
                 </a>
-                <a class="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-persian-blue" href="acadManagement.php" title="Academic Administration">
-                    <i class="fa-solid fa-school"></i>
-                </a>
+
             </div>
             <?php
             break;
@@ -48,7 +46,7 @@
                 <a class="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-persian-blue" href="roomMngmnt.php" title="Room Management">
                     <i class="fa-solid fa-door-open"></i>
                 </a>
-                <a class="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-persian-blue" href="acadManagement.php" title="Academic Administration">
+                <a class="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-persian-blue" href="dataSetup.php" title="Data Setup">
                     <i class="fa-solid fa-school"></i>
                 </a>
             </div>
@@ -80,6 +78,9 @@
                     <i class="fa-solid fa-home"></i>
                 </a>
                 <a class="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-persian-blue" href="deptHeadSched.php" title="Room Loading">
+                    <i class="fa-solid fa-door-open"></i>
+                </a>
+                <a class="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-persian-blue" href="reservations-deptHead.php" title="Facility Reservations">
                     <i class="fa-solid fa-calendar"></i>
                 </a>
             </div>

@@ -15,7 +15,7 @@
             </div>
         <?php endif; ?>
 
-        <form method="post" action="Test files/save_course.php">
+        <form method="post" action="save_course.php">
             <div class="w-full px-3 mb-6">
                 <label for="courseName" class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2">Course Name:</label>
                 <input type="text" id="courseName" name="courseName" placeholder="Enter course name" required class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white">
@@ -28,7 +28,7 @@
                 <label for="courseCollege" class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2">College:</label>
                 <input type="text" id="courseCollege" name="courseCollege" placeholder="Enter college" required class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white">
             </div>            
-            <button type="submit" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Submit</button>
+            <button type="submit" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Save</button>
         </form>
     </div>
 

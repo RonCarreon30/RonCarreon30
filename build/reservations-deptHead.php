@@ -69,10 +69,7 @@ if ($reservation_result->num_rows > 0) {
         $reservations[] = $reservation;
     }
 }
-
 ?>
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -80,7 +77,6 @@ if ($reservation_result->num_rows > 0) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PLV: RESERVA</title>
     <link rel="stylesheet" href="css/style.css">
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar/index.global.min.js'></script>
 </head>
 <body>
     <div class="flex h-screen bg-gray-100">
@@ -92,7 +88,7 @@ if ($reservation_result->num_rows > 0) {
         <div class="flex flex-col flex-1">
             <header class="bg-white shadow-lg">
                 <div class="flex items-center justify-between px-6 py-3 border-b">
-                    <h2 class="text-lg font-semibold">Chairperson's Dashboard</h2>
+                    <h2 class="text-lg font-semibold">Events/Reserved Dates</h2>
                     <!-- Add any header content here -->
                 </div>
             </header>
@@ -103,112 +99,74 @@ if ($reservation_result->num_rows > 0) {
             </div>
             <!-- For debugging purposes to get session data-->
             <!-- Main content area -->
-            <main class="flex flex-1 p-4 h-screen overflow-y-auto">
-                <div class="w-1/2">
-                    <div class="mb-4">
-                        <!-- Banner -->
-                        <div class="relative bg-blue-300 text-white p-6 m-2 rounded-md lg:h-32 xl:h-40 md:h-24 sm:h-20 flex justify-between max-h-40 overflow-hidden">
-                            <div class="w-full md:w-3/4">
-                                <h2 class="text-lg lg:text-xl xl:text-2xl font-semibold pb-1">Welcome, <?php echo $user_data['first_name'] . ' ' . $user_data['last_name']; ?></h2>
-                                <p class="text-sm lg:text-base">Welcome to your dashboard! From here, you can efficiently manage room loadings, view schedules, and input essential data for classes and other academic-related management. If you require assistance, please don't hesitate to reach out to our support team.</p>
-                            </div>
-                            <div class="hidden md:block w-1/4">
-                                <img class="h-auto w-full" src="img/undraw_hello_re_3evm.svg" alt="Greeting SVG">
-                            </div>
-                        </div>
+            <main class="p-4 h-screen overflow-y-auto">
+                <div class="flex flex-col space-y-4 overflow-y-auto">
+                    <div class="flex justify-between items-center">
+                        <input type="text" id="search" placeholder="Search..." class="border rounded-md py-2 px-4" onkeyup="filterReservations()">
                     </div>
-                    
-                    <!--Widgets-->
-                    <div class="grid grid-cols-2 m-2 gap-4">
-                        <div class="flex items-center rounded bg-white p-6 shadow-md h-40">
-                            <i class="fas fa-calendar-alt fa-3x w-1/4 text-blue-600"></i>
-                            <div class="ml-4 w-3/4">
-                                <h2 class="text-lg font-bold">Upcoming Reservations</h2>
+                    <div id="eventsList" class="bg-white shadow overflow-y-auto sm:rounded-lg flex-1">
+                        <table class="w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Facility Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reservation Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Time</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Time</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purpose</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rejection Reason</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="reservationTableBody">
                                 <?php
-                                // Fetch count of upcoming reservations for the current user's department
-                                $reservation_count_sql = "SELECT COUNT(*) AS count FROM reservations WHERE user_department = '$head_department' AND reservation_date >= CURDATE()";
-                                $reservation_count_result = $conn->query($reservation_count_sql);
-
-                                if ($reservation_count_result) {
-                                    $row = $reservation_count_result->fetch_assoc();
-                                    $reservation_count = $row['count'];
-                                    echo '<p class="text-2xl">' . $reservation_count . '</p>';
+                                // Display reservations
+                                if ($review_reservation_result->num_rows > 0) {
+                                    // Reset pointer to the beginning of the result set
+                                    mysqli_data_seek($review_reservation_result, 0);
+                                    
+                                    while ($row = $review_reservation_result->fetch_assoc()) {
+                                        // Add unique IDs to each row
+                                        $reservationId = $row["id"];
+                                        echo '<tr class="reservation-item" data-reservation-id="' . $reservationId . '">';
+                                        echo '<td class="px-6 py-4 whitespace-nowrap">' . htmlspecialchars($row["facility_name"]) . '</td>';
+                                        echo '<td class="px-6 py-4 whitespace-nowrap">' . htmlspecialchars($row["reservation_date"]) . '</td>';
+                                        echo '<td class="px-6 py-4 whitespace-nowrap">' . htmlspecialchars($row["start_time"]) . '</td>';
+                                        echo '<td class="px-6 py-4 whitespace-nowrap">' . htmlspecialchars($row["end_time"]) . '</td>';
+                                        echo '<td class="px-6 py-4 whitespace-nowrap italic">' . htmlspecialchars($row["reservation_status"]) . '</td>';
+                                        echo '<td class="px-6 py-4 whitespace-nowrap">' . htmlspecialchars($row["purpose"]) . '</td>';
+                                        echo '<td class="px-6 py-4 whitespace-nowrap">' . htmlspecialchars($row["rejection_reason"]) . '</td>';
+                                        
+                                        // Conditionally show accept and decline buttons only for "In Review" reservations
+                                        if ($row["reservation_status"] === "In Review") {
+                                            echo '<td class="px-6 py-4 whitespace-nowrap">';
+                                            echo '<div class="flex">';
+                                            echo '<button onclick="declineReservation(' . $reservationId . ')" class="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600">Decline</button>';
+                                            echo '<button onclick="acceptReservation(' . $reservationId . ')" class="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-green-600">Accept</button>';
+                                            echo '</div>';
+                                            echo '</td>';
+                                        } else {
+                                            echo '<td class="px-6 py-4 whitespace-nowrap"></td>';
+                                        }
+                                        
+                                        echo '</tr>';
+                                    }
                                 } else {
-                                    echo '<p class="text-2xl">0</p>';
+                                    echo '<tr><td colspan="8" class="px-6 py-4 text-center">No reservations found</td></tr>';
                                 }
                                 ?>
-                            </div>
-                        </div>
-                            <div class="flex items-center rounded bg-white p-6 shadow-md h-40">
-                            <i class="fas fa-calendar-check fa-3x w-1/4 text-green-600"></i>
-                            <div class="ml-4 w-3/4">
-                                <h2 class="text-lg font-bold">Total Classes Scheduled</h2>
-
-                            </div>
-                        </div>
-
-                        <div class="flex items-center rounded bg-white p-6 shadow-md h-40">
-                            <i class="fas fa-exclamation-triangle fa-3x w-1/4 text-red-600"></i>
-                            <div class="ml-4 w-3/4">
-                                <h2 class="text-lg font-bold">Pending Approvals</h2>
-                                <?php
-                                // Fetch count of reservations awaiting approval for the current user's department
-                                $pending_count_sql = "SELECT COUNT(*) AS count FROM reservations WHERE user_department = '$head_department' AND reservation_status = 'In Review'";
-                                $pending_count_result = $conn->query($pending_count_sql);
-
-                                if ($pending_count_result) {
-                                    $row = $pending_count_result->fetch_assoc();
-                                    $pending_count = $row['count'];
-                                    // Create a clickable button to redirect to reservations-deptHead.php
-                                    echo '<a href="reservations-deptHead.php" class="text-2xl hover:underline">' . $pending_count . '</a>';
-                                } else {
-                                    echo '<p class="text-2xl">0</p>';
-                                }
-                                ?>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center rounded bg-white p-6 shadow-md h-40">
-                            <i class="fas fa-times-circle fa-3x w-1/4 text-red-600"></i>
-                            <div class="ml-4 w-3/4">
-                                <h2 class="text-lg font-bold">Declined Reservations</h2>
-                                <?php
-                                // Fetch count of declined reservations for the current user's department
-                                $declined_count_sql = "SELECT COUNT(*) AS count FROM reservations WHERE user_department = '$head_department' AND reservation_status = 'Declined'";
-                                $declined_count_result = $conn->query($declined_count_sql);
-
-                                if ($declined_count_result) {
-                                    $row = $declined_count_result->fetch_assoc();
-                                    $declined_count = $row['count'];
-                                    echo '<p class="text-2xl">' . $declined_count . '</p>';
-                                } else {
-                                    echo '<p class="text-2xl">0</p>';
-                                }
-                                ?>
-                            </div>
-                        </div>
-
-
-                        <div class="flex items-center rounded bg-white p-6 shadow-md h-40">
-                            <i class="fas fa-calendar-times fa-3x w-1/4 text-yellow-600"></i>
-                            <div class="ml-4 w-3/4">
-                                <h2 class="text-lg font-bold">Total Classes Not Scheduled</h2>
-                            </div>
-                        </div>
+                            </tbody>
+                        </table>
+                        
+                    </div>
+                    <!-- Add pagination controls above the table -->
+                    <div class="flex justify-center items-center space-x-2 mt-4">
+                        <button onclick="prevPage()" class="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600">&lt;&lt;</button>
+                        <span id="pagination" class="flex items-center space-x-2"></span>
+                        <button onclick="nextPage()" class="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600">&gt;&gt;</button>
                     </div>
 
-
-                    
                 </div>
-                
-                <div class="h-full border-l border-gray-300"></div>
-
-                <div class="flex flex-col h-full w-1/2 space-y-4">
-                    <div >
-                        <div id='calendar' class="h-full p-1 text-xs bg-white border border-gray-200 rounded-lg shadow-lg"></div>
-                    </div>
-                </div>
-
             </main>
                 <div id="footer-container">
                     <?php include 'footer.php' ?>
@@ -286,93 +244,79 @@ if ($reservation_result->num_rows > 0) {
     <script src="scripts/logout.js"></script>
     <script src="scripts/functions.js"></script>
     <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const calendarEl = document.getElementById('calendar');
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        events: <?php echo json_encode($reservations); ?>,
-        eventDidMount: function(info) {
-            // Manipulate the event element's style here
-            info.el.style.position = 'absolute';
-            info.el.style.left = '0';
-            info.el.style.right = '0';
-            info.el.style.top = '0';
-            info.el.style.bottom = '0';
-        },
-        eventContent: function(info) {
-            return {
-                html: `
-                    <div style="position: relative; z-index: 1;">
-                        ${info.event.title}<br>
-                        ${info.event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true, seconds: false })}
-                        ${info.event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true, seconds: false })}
-                    </div>
-                `
-            };
+// Pagination
+let currentPage = 1;
+const pageSize = 10; // Number of reservations per page
+
+function renderPagination(totalPages) {
+    const paginationElement = document.getElementById('pagination');
+    paginationElement.innerHTML = '';
+
+    // Create pagination controls
+    if (currentPage > 1) {
+        paginationElement.innerHTML += `<button onclick="prevPage()" class="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600">&lt;&lt;</button>`;
+    }
+
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === currentPage) {
+            paginationElement.innerHTML += `<span class="px-2 py-1 bg-blue-500 text-white rounded-md">${i}</span>`;
+        } else {
+            paginationElement.innerHTML += `<button onclick="goToPage(${i})" class="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600">${i}</button>`;
+        }
+    }
+
+    if (currentPage < totalPages) {
+        paginationElement.innerHTML += `<button onclick="nextPage()" class="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600">&gt;&gt;</button>`;
+    }
+}
+
+function goToPage(page) {
+    currentPage = page;
+    filterReservations();
+}
+
+function nextPage() {
+    currentPage++;
+    filterReservations();
+}
+
+function prevPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        filterReservations();
+    }
+}
+
+// Filter
+function filterReservations() {
+    const filterValue = document.getElementById('search').value.toUpperCase();
+    const rows = document.querySelectorAll('.reservation-item');
+    const totalPages = Math.ceil(rows.length / pageSize);
+
+    renderPagination(totalPages);
+
+    rows.forEach((row, index) => {
+        const facilityName = row.querySelector('td:first-child').textContent.toUpperCase();
+        if (facilityName.indexOf(filterValue) > -1) {
+            if (index >= (currentPage - 1) * pageSize && index < currentPage * pageSize) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        } else {
+            row.style.display = 'none';
         }
     });
+}
 
-    // Event listener for clicking on FullCalendar events
-    calendar.on('eventClick', function(info) {
-        console.log('Clicked event:', info.event);
-        // Call the showModal function and pass the event details
-        showModal(info.event);
-    });
-
-    calendar.render();
+// Initial pagination rendering
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('.reservation-item');
+    const totalPages = Math.ceil(rows.length / pageSize);
+    renderPagination(totalPages);
 });
 
 
-// Function to show modal with reservation details
-function showModal(event) {
-    console.log('Showing modal for event:', event);
-    const modal = document.getElementById('reservationsModal');
-    const modalContent = modal.querySelector('#modalContent');
-
-    // Convert start and end dates to local time
-    const startDate = new Date(event.start);
-    const endDate = new Date(event.end);
-
-    // Format options for date and time
-    const dateOptions = {
-        weekday: 'short', 
-        year: 'numeric', 
-        month: 'numeric', 
-        day: 'numeric',
-    };
-
-    const timeOptions = {
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: true
-    };
-
-    modalContent.innerHTML = `
-        <p><strong>Facility Name:</strong> ${event.title}</p>
-        <p><strong>Reservation Date:</strong> ${startDate.toLocaleDateString(undefined, dateOptions)}</p>
-        <p><strong>Start Time:</strong> ${startDate.toLocaleTimeString(undefined, timeOptions)}</p>
-        <p><strong>End Time:</strong> ${endDate.toLocaleTimeString(undefined, timeOptions)}</p>
-        <!-- Add more details as needed -->
-    `;
-
-    modal.classList.remove('hidden');
-}
-
-
-// Function to close the modal
-function closeModal() {
-    const modal = document.getElementById('reservationsModal');
-    modal.classList.add('hidden');
-}
-
-
-// Function to hide success modal
-function hideRejectModal() {
-    const rejectionReasonForm = document.getElementById('rejectionReasonForm');
-    rejectionReasonForm.classList.add('hidden');
-}
-
-//Dept. Head Reservations Functions
 // Function to show confirmation modal
 function showConfirmation(message, callback) {
     const confirmationModal = document.getElementById('confirmationModal');
@@ -421,9 +365,16 @@ function acceptReservation(reservationId) {
                 // Handle error
                 showModal({ title: 'Error accepting reservation' });
             }
+        })
+        .catch(error => {
+            console.error('Error accepting reservation:', error);
+            // Handle error
+            showModal({ title: 'Error accepting reservation' });
         });
     });
 }
+
+// Function to handle declining reservation
 function declineReservation(reservationId) {
     console.log("Decline button clicked");
     // Show rejection reason form
@@ -456,6 +407,11 @@ function declineReservation(reservationId) {
                     // Handle error
                     showModal({ title: 'Error declining reservation' });
                 }
+            })
+            .catch(error => {
+                console.error('Error declining reservation:', error);
+                // Handle error
+                showModal({ title: 'Error declining reservation' });
             });
         });
     };
